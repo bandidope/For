@@ -1,90 +1,134 @@
-import { WAMessageStubType } from '@whiskeysockets/baileys'
-import { readFileSync, existsSync } from 'fs'
-import { join } from 'path'
+import { WAMessageStubType } from '@whiskeysockets/baileys';
+import fetch from 'node-fetch';
+import fs from 'fs';
+import path from 'path';
 
-const TU_FOTO_URL = 'https://tu-url.com/tu-foto.jpg'
-
-const handler = async (m, { conn, args, isAdmin, isOwner }) => {
-  if (!isAdmin &&!isOwner) throw "⚠️ Solo los administradores pueden usar este comando."
-  let chat = global.db.data.chats[m.chat]??= {}
-  if (/on/i.test(args[0])) {
-    chat.bienvenida = true
-    await conn.reply(m.chat, "✅ *Bienvenida activada*", m)
-  } else if (/off/i.test(args[0])) {
-    chat.bienvenida = false
-    await conn.reply(m.chat, "❌ *Bienvenida desactivada*.", m)
-  }
-}
-
-handler.command = /^(bienvenida|welcome|bye)$/i // <- NO TOCAMOS ESTO
-
-handler.before = async function (m, { conn, groupMetadata }) {
+export async function before(m, { conn }) {
   try {
-    if (!m.messageStubType ||!m.isGroup) return true
-    const chat = global.db?.data?.chats?.[m.chat]
-    if (!chat ||!chat.bienvenida) return true
+    if (!m.messageStubType ||!m.isGroup) return true;
+    const chat = global.db?.data?.chats?.[m.chat];
+    if (!chat || chat.bienvenida === false) return true;
 
-    const userJid = m.messageStubParameters?.[0] || m.participant
-    if (!userJid) return true
+    const groupMetadata = await conn.groupMetadata(m.chat).catch(_ => null);
+    if (!groupMetadata) return true;
 
-    // 1. FOTO
-    let ppUser
-    try { ppUser = await conn.profilePictureUrl(userJid, 'image') }
-    catch { ppUser = { url: TU_FOTO_URL } }
+    let userJid = m.messageStubParameters?.[0];
+    if (!userJid) return true;
 
-    const userTag = `@${userJid.split('@')[0]}`
-    const groupName = groupMetadata.subject
-    const membersCount = groupMetadata.participants.length
-    const groupDesc = groupMetadata.desc || 'Disfruta tu estadía.'
-
-    // TEXTOS DEFAULT
-    const defaultWelcome = `😏 *Vaya, alguien nuevo...*\n\nBienvenido ${userTag} a *${groupName}*.\n\n📂 *REGISTRO:*\n│ 👤 *Miembro:* #${membersCount}\n│ 🛠️ *Creador: Whois*\n│ 📝 *Info:* ${groupDesc}`
-    const defaultBye = `🏃‍♂️ *Uno menos.*\n\n${userTag} salió de *${groupName}*.\n\n📉 *Quedamos:* ${membersCount}`
-    const defaultKick = `⚡ *ACCESO DENEGADO*\n\n${userTag} fue expulsado de *${groupName}*.\n\n🚮 *Causa:* Estorbaba.`
-
-    let txt = ''
-    let audioFile = ''
-
-    switch (m.messageStubType) {
-      case WAMessageStubType.GROUP_PARTICIPANT_ADD:
-        txt = (chat.sWelcome || defaultWelcome) // <- SOLO AGREGUÉ ESTO
-       .replace(/@user/g, userTag).replace(/@group/g, groupName).replace(/@count/g, membersCount).replace(/@desc/g, groupDesc)
-        audioFile = 'bienvenida.mp3'
-        break
-      case WAMessageStubType.GROUP_PARTICIPANT_LEAVE:
-        txt = (chat.sBye || defaultBye) // <- SOLO AGREGUÉ ESTO
-       .replace(/@user/g, userTag).replace(/@group/g, groupName).replace(/@count/g, membersCount)
-        audioFile = 'despedida.mp3'
-        break
-      case WAMessageStubType.GROUP_PARTICIPANT_REMOVE:
-        txt = (chat.sBye || defaultKick) // <- SOLO AGREGUÉ ESTO
-       .replace(/@user/g, userTag).replace(/@group/g, groupName).replace(/@count/g, membersCount)
-        audioFile = 'despedida.mp3'
-        break
+    // [FIX @lid -> @numero]
+    let userName = userJid.split('@')[0];
+    if (userJid.endsWith('@lid')) {
+      try {
+        let info = await conn.onWhatsApp(userJid);
+        userName = info[0]?.jid?.split('@')[0] || userName;
+      } catch(e){}
     }
+    const user = `@${userName}`;
 
-    if (txt) {
-      await conn.sendMessage(m.chat, {
-        image: typeof ppUser === 'string'? { url: ppUser } : ppUser,
-        caption: txt,
-        mentions: [userJid]
-      })
+    // [DATOS DEL GRUPO]
+    const groupName = groupMetadata.subject || 'Mi Grupo';
+    const groupDesc = groupMetadata.desc?.toString() || '📜 No hay descripción';
+    const groupMembers = groupMetadata.participants.length;
 
-      const audioPath = join(process.cwd(), audioFile)
-      if (existsSync(audioPath)) {
-        const audioBuffer = readFileSync(audioPath)
-        await conn.sendMessage(m.chat, {
-          audio: audioBuffer,
-          mimetype: 'audio/mpeg',
-          ptt: false
-        })
+    const fixedImageUrl = 'https://files.evogb.win/FXbFDD.jpg'; // [TU LOGO SOLO SI NO TIENE FOTO]
+
+    // [FIX] 1. INTENTA AGARRAR LA FOTO DEL USER PRIMERO
+    let imgBuffer = null;
+    try {
+      let ppUrl = await conn.profilePictureUrl(userJid, 'image').catch(_ => null);
+      if (ppUrl) {
+        imgBuffer = await fetch(ppUrl).then(res => res.buffer()).catch(_ => null); // [SI TIENE FOTO = USA SU FOTO]
       }
+    } catch(e){}
+
+    // [FIX] 2. SI NO TIENE FOTO O FALLÓ, USA TU LOGO
+    if (!imgBuffer) {
+      imgBuffer = await fetch(fixedImageUrl).then(res => res.buffer()).catch(_ => null); // [SI NO TIENE = TU LOGO]
     }
 
-  } catch (e) {
-    console.error("Error:", e)
+    let text = '', audioFile = '';
+
+    // [SWITCH PARA LOS 3 CASOS CON CUSTOM]
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
+      audioFile = './bienvenida.mp3';
+      text = chat.customWelcome
+     ? chat.customWelcome.replace(/@user/gi, user).replace(/@group/gi, groupName).replace(/@count/gi, groupMembers).replace(/@desc/gi, groupDesc)
+        : `
+╭───────────────────╮
+│ 👋 *BIENVENIDO(A)* 👋 │
+╰───────────────────╯
+
+${user} acabas de entrar a:
+
+🎮 *Grupo:* ${groupName}
+👥 *Miembros:* ${groupMembers} integrantes
+📜 *Descripción:* ${groupDesc}
+
+✨ *Pásala bien, lee las reglas y diviértete* ✨
+`.trim();
+
+    } else if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE) {
+      audioFile = './despedida.mp3';
+      text = chat.customBye
+     ? chat.customBye.replace(/@user/gi, user).replace(/@group/gi, groupName).replace(/@count/gi, groupMembers).replace(/@desc/gi, groupDesc)
+        : `
+╭───────────────────╮
+│ 😭 *SE FUE* 😭 │
+╰───────────────────╯
+
+${user} salió de:
+
+🎮 *Grupo:* ${groupName}
+👥 *Quedamos:* ${groupMembers} integrantes
+📜 *Motivo:* Salió por su cuenta
+
+🕊️ *Que te vaya bien donde estés* 🕊️
+`.trim();
+
+    } else if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
+      audioFile = './kick.mp3';
+      text = chat.customKick
+     ? chat.customKick.replace(/@user/gi, user).replace(/@group/gi, groupName).replace(/@count/gi, groupMembers).replace(/@desc/gi, groupDesc)
+        : `
+╭───────────────────╮
+│ ❌ *EXPULSADO* ❌ │
+╰───────────────────╯
+
+${user} fue expulsado de:
+
+🎮 *Grupo:* ${groupName}
+👥 *Quedamos:* ${groupMembers} integrantes
+📜 *Motivo:* Incumplió las reglas
+
+🚫 *No se toleran faltas de respeto* 🚫
+`.trim();
+    } else return true;
+
+    // 1. MENSAJE 1: IMAGEN + TEXTO PRO
+    if(imgBuffer){
+      await conn.sendMessage(m.chat, { image: imgBuffer, caption: text, mentions: [userJid] });
+    } else {
+      await conn.sendMessage(m.chat, { text: text, mentions: [userJid] });
+    }
+
+    // 2. MENSAJE 2: AUDIO CON BARRA
+    const audioPath = path.resolve(audioFile);
+    if (fs.existsSync(audioPath)) {
+      await new Promise(r => setTimeout(r, 1500)); // Delay para que no se pegue
+      const audioBuffer = fs.readFileSync(audioPath);
+      await conn.sendMessage(m.chat, {
+        audio: audioBuffer,
+        mimetype: 'audio/mpeg',
+        ptt: false // [AUDIO CON BARRA + TRANSCRIBIR]
+      });
+      console.log(`[WELCOME] ✅ Enviado: ${audioFile}`);
+    } else {
+      console.log(`[WELCOME] ❌ No existe: ${audioPath}`);
+    }
+
+  } catch (error) {
+    console.error('❌ Error en welcome:', error);
   }
-  return true
 }
 
-export default handler
+export const disabled = false;
