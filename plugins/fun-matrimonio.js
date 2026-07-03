@@ -20,16 +20,12 @@ const toNum = (jid) => jid?.split('@')[0] + '@s.whatsapp.net'
 const handler = async (m, { conn, command, usedPrefix }) => {
     const isMarry = /^marry$/i.test(command);
     const isDivorce = /^divorce$/i.test(command);
-    const isAccept = /^aceptarmarry$/i.test(command);
-    const isReject = /^rechazarmarry$/i.test(command);
-
     const sender = toNum(m.sender);
     const target = toNum(m.mentionedJid?.[0] || m.quoted?.sender);
 
     const isMarried = (user) => marriages[user]!== undefined;
 
     try {
-        // ===== MARRY CON BOTONES =====
         if (isMarry) {
             if (!m.mentionedJid?.[0] &&!m.quoted) {
                 if (isMarried(sender)) {
@@ -49,32 +45,31 @@ const handler = async (m, { conn, command, usedPrefix }) => {
                         conn.reply(m.chat, `*《✧》Se acabó el tiempo. @${sender.split('@')[0]} tu propuesta fue cancelada.*`, null, { mentions: [sender] });
                         delete proposals[target];
                     }
-                }, 300000) // 5 MINUTOS
+                }, 300000)
             };
 
             let txt = `♡ *@${sender.split('@')[0]}* te ha propuesto matrimonio. @${target.split('@')[0]} ¿aceptas? •(=^●ω●^=)•\n\n*Tienes 5 minutos para responder*`
 
-            // AQUI VAN LOS BOTONES
+            // BOTONES IGUALES A TU FOTO
             await conn.sendMessage(m.chat, {
                 text: txt,
+                footer: 'Sistema de Matrimonio',
                 mentions: [sender, target],
                 buttons: [
                     { buttonId: `${usedPrefix}aceptarmarry`, buttonText: { displayText: '💍 Si' }, type: 1 },
                     { buttonId: `${usedPrefix}rechazarmarry`, buttonText: { displayText: '💔 No' }, type: 1 }
-                ],
-                headerType: 1
-            })
+                ]
+            }, { quoted: m })
 
-        // ===== ACEPTAR CON BOTON =====
-        } else if (isAccept) {
+        } else if (/^aceptarmarry$/i.test(command)) {
             const proposee = sender;
-            if (!proposals[proposee]) return m.reply('❌ No tienes ninguna propuesta pendiente');
-
+            if (!proposals[proposee]) return
             const { proposer, timeout } = proposals[proposee];
+
             if (marriages[proposer] || marriages[proposee]) {
                 clearTimeout(timeout);
                 delete proposals[proposee];
-                return conn.reply(m.chat, `《✧》 Uno de los dos ya se casó con otra persona mientras esperaban.`, m);
+                return conn.reply(m.chat, `《✧》 Uno de los dos ya se casó con otra persona.`, m);
             }
 
             clearTimeout(timeout);
@@ -93,18 +88,15 @@ const handler = async (m, { conn, command, usedPrefix }) => {
 \`Disfruten su luna de miel\`
 ✩.･:｡≻───── ⋆♡⋆ ─────.•:｡✩`, m, { mentions: [proposer, proposee] });
 
-        // ===== RECHAZAR CON BOTON =====
-        } else if (isReject) {
+        } else if (/^rechazarmarry$/i.test(command)) {
             const proposee = sender;
-            if (!proposals[proposee]) return m.reply('❌ No tienes ninguna propuesta pendiente');
-
+            if (!proposals[proposee]) return
             const { proposer, timeout } = proposals[proposee];
             clearTimeout(timeout);
             delete proposals[proposee];
 
             return conn.reply(m.chat, `*《✧》 @${proposee.split('@')[0]} rechazó la propuesta de @${proposer.split('@')[0]} 💔`, m, { mentions: [proposee, proposer] });
 
-        // ===== DIVORCE =====
         } else if (isDivorce) {
             if (!isMarried(sender)) throw new Error('《✧》 No estás casado con nadie.');
             const partner = marriages[sender];
@@ -117,9 +109,6 @@ const handler = async (m, { conn, command, usedPrefix }) => {
         await conn.reply(m.chat, `《✧》 ${e.message}`, m);
     }
 }
-
-// Ya no necesitamos el before porque ahora usamos botones
-// handler.before = async (m, { conn }) => {... }
 
 handler.help = ['marry @tag', 'divorce'];
 handler.tags = ['fun'];
