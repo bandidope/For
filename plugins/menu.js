@@ -11,9 +11,16 @@ let handler = async (m, { conn, usedPrefix }) => {
       groups[tag].push(...[].concat(p.help))
     }
   }
-  let categories = Object.keys(groups).sort()
+  
+  // [2] ORDENAR: VENTAS BOT PRIMERO, LUEGO EL RESTO A-Z
+  let categories = Object.keys(groups)
+  categories.sort((a, b) => {
+    if (a.toLowerCase() === 'ventas bot') return -1 // <-- Manda ventas bot arriba
+    if (b.toLowerCase() === 'ventas bot') return 1
+    return a.localeCompare(b) // <-- El resto normal A-Z
+  })
 
-  // [2] ARMAR EL TEXTO CON TODAS LAS CATS
+  // [3] ARMAR EL TEXTO
   let menuTxt = `*🤖 [ For Three Bot ]* 🤖\n\n`
   menuTxt += `👤 Usuario: ${taguser}\n⚙️ Prefijo: [ ${usedPrefix} ]\n`
   menuTxt += `📦 Total Plugins: ${plugins.length}\n📂 Categorías: ${categories.length}\n\n`
@@ -25,18 +32,14 @@ let handler = async (m, { conn, usedPrefix }) => {
     menuTxt += `\n\n━━━━━━━━━━━━━━\n\n`
   }
   
-  menuTxt += `> Sistema v3 🌀 | Usa los comandos de arriba`
+  menuTxt += `👑 *Creador:* ${usedPrefix}creador\n`
+  menuTxt += `> Sistema v3 🌀`
 
-  // [3] MANDAR FOTO + BOTON CREADOR
+  // [4] MANDAR FOTO + TEXTO
   await conn.sendMessage(m.chat, {
     image: { url: imgUrl },
     caption: menuTxt,
-    footer: 'For Three Bot 🌀',
-    mentions: [m.sender],
-    buttons: [
-      {buttonId: `${usedPrefix}creador`, buttonText: {displayText: '👑 CREADOR'}, type: 1}
-    ],
-    headerType: 4
+    mentions: [m.sender]
   }, { quoted: m })
 }
 
