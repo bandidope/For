@@ -76,7 +76,7 @@ let handler = async (m, { conn, args, command, isAdmin }) => {
 }
 
 handler.help = ['addrl', 'delusrl', 'spinrl', 'clearrl', 'listrl']
-handler.tags = ['main']
+handler.tags = ['sorteos']
 handler.command = /^(addrl|delusrl|spinrl|clearrl|listrl)$/i
 handler.admin = true
 
