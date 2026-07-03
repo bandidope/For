@@ -1,5 +1,5 @@
 import { WAMessageStubType } from '@whiskeysockets/baileys'
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 
 const TU_FOTO_URL = 'https://tu-url.com/tu-foto.jpg' // <-- PON TU URL AQUÍ
@@ -29,65 +29,66 @@ handler.before = async function (m, { conn, groupMetadata }) {
     const chat = global.db?.data?.chats?.[m.chat]
     if (!chat ||!chat.bienvenida) return true
 
+    const userJid = m.messageStubParameters?.[0] || m.participant
+    if (!userJid) return true
+
     // 1. PFP DEL USER O TU FOTO
     let ppUser
     try {
-      ppUser = await conn.profilePictureUrl(m.messageStubParameters?.[0], 'image')
+      ppUser = await conn.profilePictureUrl(userJid, 'image')
     } catch {
       ppUser = { url: TU_FOTO_URL }
     }
 
-    const userJid = m.messageStubParameters?.[0] || m.participant
-    if (!userJid) return true
-
     const userTag = `@${userJid.split('@')[0]}`
     const groupName = groupMetadata.subject
-    const groupDesc = groupMetadata.desc || 'Disfruta tu estadía.'
     const membersCount = groupMetadata.participants.length
 
     let txt = ''
-    let audioFile = ''
+    let ttsText = '' // Texto limpio para el audio
 
-    // 2. TUS MISMOS TEXTOS
+    // 2. FORMATO IGUAL A TU FOTO STORM
     switch (m.messageStubType) {
       case WAMessageStubType.GROUP_PARTICIPANT_ADD:
-        txt = chat.customWelcome? chat.customWelcome.replace(/@user/gi, userTag).replace(/@group/gi, groupName).replace(/@desc/gi, groupDesc) :
-        `😏 *Vaya, alguien nuevo...*\n\nBienvenido ${userTag} a *${groupName}*.\n\n📂 *REGISTRO DE ACCESO:*\n│ 👤 *Miembro:* #${membersCount}\n│ 🛠️ *Creador: Whois*\n│ 📝 *Info:* ${groupDesc}\n\n> Intenta no hacer que te echen rápido.`
-        audioFile = 'bienvenida.mp3' // <-- directo en raíz
+        txt = `😏 *BIENVENIDO* 😏 |\n\n${userTag} entró a:\n\n🎮 *Grupo:* ${groupName}\n👥 *Somos:* ${membersCount} integrantes\n> Porta tu grimorio con honor.`
+        ttsText = `Bienvenido. ${userJid.split('@')[0]} entró al grupo ${groupName}. Somos ${membersCount} integrantes.`
         break
 
       case WAMessageStubType.GROUP_PARTICIPANT_LEAVE:
-        txt = chat.customBye? chat.customBye.replace(/@user/gi, userTag).replace(/@group/gi, groupName) :
-        `🏃‍♂️ *Uno menos, ni falta que hacía.*\n\n${userTag} no aguantó el nivel de *${groupName}*.\n\n📉 *Quedamos:* ${membersCount} sobrevivientes.`
-        audioFile = 'despedida.mp3' // <-- directo en raíz
+        txt = `😭 *SE FUE* 😭 |\n\n${userTag} salió de:\n\n🎮 *Grupo:* ${groupName}\n👥 *Quedamos:* ${membersCount} integrantes\n📜 *Motivo:* Salió por su cuenta\n🕊️ Que te vaya bien donde estés`
+        ttsText = `Se fue. ${userJid.split('@')[0]} salió del grupo ${groupName}. Quedamos ${membersCount} integrantes. Motivo: Salió por su cuenta. Que te vaya bien donde estés`
         break
 
       case WAMessageStubType.GROUP_PARTICIPANT_REMOVE:
-        txt = chat.customKick? chat.customKick.replace(/@user/gi, userTag).replace(/@group/gi, groupName) :
-        `⚡ *SISTEMA: ACCESO DENEGADO*\n\n${userTag} fue borrado de la existencia en *${groupName}*.\n\n🚮 *Causa:* Estorbaba.\n👥 *Población actual:* ${membersCount}`
-        audioFile = 'despedida.mp3' // <-- directo en raíz
+        txt = `⚡ *KICK* ⚡ |\n\n${userTag} fue eliminado de:\n\n🎮 *Grupo:* ${groupName}\n👥 *Quedamos:* ${membersCount} integrantes\n📜 *Motivo:* Fue expulsado\n\n🚮 Causa: Estorbaba`
+        ttsText = `Kick. ${userJid.split('@')[0]} fue eliminado del grupo ${groupName}. Quedamos ${membersCount} integrantes. Motivo: Fue expulsado.`
         break
     }
 
     if (txt) {
-      // 3. IMAGEN CON PFP
+      // 3. IMAGEN CON PFP + RECUADRO DE TEXTO
       await conn.sendMessage(m.chat, {
         image: typeof ppUser === 'string'? { url: ppUser } : ppUser,
         caption: txt,
         mentions: [userJid]
       })
 
-      // 4. AUDIO DIRECTO DESDE RAÍZ COMO PTT
+      // 4. AUDIO TTS FORMATO STORM 0:27s PTT
       try {
-        const audioPath = join(process.cwd(), audioFile) // <-- sin /media
-        const audioBuffer = readFileSync(audioPath)
+        const audioBuffer = await conn.getAudio(ttsText, 'es')
         await conn.sendMessage(m.chat, {
           audio: audioBuffer,
           mimetype: 'audio/mpeg',
-          ptt: true
+          ptt: true // <-- Esto lo hace nota de voz naranja
         })
       } catch (e) {
-        console.error("Error mandando audio:", e)
+        console.error("Error TTS:", e)
+        // Fallback mp3 si TTS falla
+        const audioFile = m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD? 'bienvenida.mp3' : 'despedida.mp3'
+        if (existsSync(join(process.cwd(), audioFile))) {
+          const audioBuffer = readFileSync(join(process.cwd(), audioFile))
+          await conn.sendMessage(m.chat, { audio: audioBuffer, mimetype: 'audio/mpeg', ptt: true })
+        }
       }
     }
 
