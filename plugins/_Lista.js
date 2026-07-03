@@ -79,7 +79,7 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
 }
 
 handler.help = ['lista ( staff )']
-handler.tags = ['sorteo staff']
+handler.tags = ['sorteos staff']
 handler.command = /^lista$/i
 handler.group = true
 handler.admin = true
