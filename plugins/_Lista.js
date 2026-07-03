@@ -17,7 +17,7 @@ let handler = async (m, { conn, args, isAdmin, isOwner }) => {
 
   let op = args[0]
 
-  // 3. MENU
+  // 3. MENU - CON RETURN PA' QUE NO CAIGA ABAJO
   if (!op) return m.reply(`*LISTA BOT*
 Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
 
@@ -83,6 +83,7 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
     return m.reply(`${aviso}${tag} *${guardarEn.toUpperCase()}*\n# ${nombre} | ${numero} | ${premio}`)
   }
 
+  // 7. SI NO ES NADA DE LO ANTERIOR
   return m.reply('Opcion no valida. Usa:.lista add,.lista ver o.lista reset')
 }
 
