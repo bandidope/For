@@ -1,12 +1,12 @@
 let handler = async (m, { conn, args, isAdmin, isOwner }) => {
   let chat = m.chat
 
-  // 1. CREAR DB SI NO EXISTE - ARREGLADO
+  // 1. CREAR DB SI NO EXISTE - BIEN HECHO ESTA VEZ
   if (!global.db.data.lista) global.db.data.lista = {}
-  if (!global.db.data.lista[chat]) global.db.data.lista[chat] = {
+  if (!global.db.data.lista) global.db.data.lista = {
     lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [], extra: []
   }
-  let db = global.db.data.lista[chat] // [chat] era lo que faltaba
+  let db = global.db.data.lista // por chat
 
   // 2. SACAR DIA DE LIMA
   let tz = 'America/Lima'
@@ -17,8 +17,9 @@ let handler = async (m, { conn, args, isAdmin, isOwner }) => {
 
   let op = args[0]
 
-  // 3. MENU - CON RETURN
-  if (!op) return m.reply(`*LISTA BOT*
+  // 3. MENU
+  if (!op) {
+    return m.reply(`*LISTA BOT*
 Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
 
 .lista add Nombre | Numero | Premio
@@ -26,6 +27,7 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
 .lista ver
 .lista reset
 .lista reset extra`)
+  }
 
   // 4. VER LISTA - CON FOTO DEL GRUPO
   if (op === 'ver') {
@@ -56,13 +58,12 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
     if (!isAdmin &&!isOwner) return m.reply('❌ Solo admins')
     if (args[1] === 'extra') {
       db.extra = []
-      m.reply('🗑️ EXTRA borrado')
+      return m.reply('🗑️ EXTRA borrado')
     } else {
       for (let d of ['lunes','martes','miercoles','jueves','viernes','sabado']) db[d] = []
-      m.reply('🗑️ Lunes a Sabado borrado. EXTRA sigue')
+      global.db.write()
+      return m.reply('🗑️ Lunes a Sabado borrado. EXTRA sigue')
     }
-    global.db.write()
-    return
   }
 
   // 6. ADD/ANOTAR
