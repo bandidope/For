@@ -16,7 +16,7 @@ const handler = async (m, { conn, args, isAdmin, isOwner }) => {
   }
 }
 
-handler.command = /^(bienvenida|welcome|bye)$/i
+handler.command = /^(bienvenida|welcome|bye)$/i // <- NO TOCAMOS ESTO
 
 handler.before = async function (m, { conn, groupMetadata }) {
   try {
@@ -37,43 +37,47 @@ handler.before = async function (m, { conn, groupMetadata }) {
     const membersCount = groupMetadata.participants.length
     const groupDesc = groupMetadata.desc || 'Disfruta tu estadía.'
 
+    // TEXTOS DEFAULT
+    const defaultWelcome = `😏 *Vaya, alguien nuevo...*\n\nBienvenido ${userTag} a *${groupName}*.\n\n📂 *REGISTRO:*\n│ 👤 *Miembro:* #${membersCount}\n│ 🛠️ *Creador: Whois*\n│ 📝 *Info:* ${groupDesc}`
+    const defaultBye = `🏃‍♂️ *Uno menos.*\n\n${userTag} salió de *${groupName}*.\n\n📉 *Quedamos:* ${membersCount}`
+    const defaultKick = `⚡ *ACCESO DENEGADO*\n\n${userTag} fue expulsado de *${groupName}*.\n\n🚮 *Causa:* Estorbaba.`
+
     let txt = ''
     let audioFile = ''
 
     switch (m.messageStubType) {
       case WAMessageStubType.GROUP_PARTICIPANT_ADD:
-        txt = `😏 *Vaya, alguien nuevo...*\n\nBienvenido ${userTag} a *${groupName}*.\n\n📂 *REGISTRO:*\n│ 👤 *Miembro:* #${membersCount}\n│ 🛠️ *Creador: Whois*\n│ 📝 *Info:* ${groupDesc}`
-        audioFile = 'bienvenida.mp3' // <-- TU.MP3
+        txt = (chat.sWelcome || defaultWelcome) // <- SOLO AGREGUÉ ESTO
+       .replace(/@user/g, userTag).replace(/@group/g, groupName).replace(/@count/g, membersCount).replace(/@desc/g, groupDesc)
+        audioFile = 'bienvenida.mp3'
         break
       case WAMessageStubType.GROUP_PARTICIPANT_LEAVE:
-        txt = `🏃‍♂️ *Uno menos.*\n\n${userTag} salió de *${groupName}*.\n\n📉 *Quedamos:* ${membersCount}`
-        audioFile = 'despedida.mp3' // <-- TU.MP3
+        txt = (chat.sBye || defaultBye) // <- SOLO AGREGUÉ ESTO
+       .replace(/@user/g, userTag).replace(/@group/g, groupName).replace(/@count/g, membersCount)
+        audioFile = 'despedida.mp3'
         break
       case WAMessageStubType.GROUP_PARTICIPANT_REMOVE:
-        txt = `⚡ *ACCESO DENEGADO*\n\n${userTag} fue expulsado de *${groupName}*.\n\n🚮 *Causa:* Estorbaba.`
-        audioFile = 'despedida.mp3' // <-- TU.MP3
+        txt = (chat.sBye || defaultKick) // <- SOLO AGREGUÉ ESTO
+       .replace(/@user/g, userTag).replace(/@group/g, groupName).replace(/@count/g, membersCount)
+        audioFile = 'despedida.mp3'
         break
     }
 
     if (txt) {
-      // 2. IMAGEN
       await conn.sendMessage(m.chat, {
         image: typeof ppUser === 'string'? { url: ppUser } : ppUser,
         caption: txt,
         mentions: [userJid]
       })
 
-      // 3. AUDIO.MP3 QUE SÍ SUENA
       const audioPath = join(process.cwd(), audioFile)
       if (existsSync(audioPath)) {
         const audioBuffer = readFileSync(audioPath)
         await conn.sendMessage(m.chat, {
           audio: audioBuffer,
-          mimetype: 'audio/mpeg', // <--.MP3 normal
-          ptt: false // <-- Barra gris. Si lo pones true sale naranja gris
+          mimetype: 'audio/mpeg',
+          ptt: false
         })
-      } else {
-        console.log(`❌ No existe: ${audioPath}`)
       }
     }
 
