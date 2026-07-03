@@ -78,7 +78,9 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
   }
 }
 
-handler.command = ['lista']
+handler.help = ['lista ( staff )']
+handler.tags = ['dzn staff']
+handler.command = /^lisra$/i
 handler.group = true
 handler.admin = true
 export default handler
