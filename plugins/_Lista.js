@@ -70,11 +70,6 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
     let aviso = esDomingo? '⚠️ *DOMINGO - Dia de Ventas*\nSe guardo en EXTRA 🛒\n\n' : ''
     return m.reply(`${aviso}${tag} *${guardarEn.toUpperCase()}*\n# ${nombre} | ${numero} | ${premio}`)
   }
-
-  // 5. SI NO ES NADA
-  else {
-    return m.reply('Opcion no valida. Usa:.lista add,.lista ver o.lista reset')
-  }
 }
 
 handler.command = ['lista']
