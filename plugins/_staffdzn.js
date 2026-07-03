@@ -61,8 +61,12 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
 }
 
 handler.help = [
-  'setlunes Texto | @tag', 'lunes', 'resetlunes',
-  'setmartes Texto | @tag', 'martes', 'resetmartes'
+  'setlunes Texto | @tag',
+  'setmartes Texto | @tag', 
+  'setmiercoles Texto | @tag',
+  'setjueves Texto | @tag',
+  'setviernes Texto | @tag',
+  'setsabado Texto | @tag'
 ]
 handler.tags = ['sorteos staff']
 handler.command = /^(setlunes|setmartes|setmiercoles|setjueves|setviernes|setsabado|resetlunes|resetmartes|resetmiercoles|resetjueves|resetviernes|resetsabado|lunes|martes|miercoles|jueves|viernes|sabado)$/i
