@@ -80,7 +80,7 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
 
 handler.help = ['lista ( staff )']
 handler.tags = ['dzn staff']
-handler.command = /^lisra$/i
+handler.command = /^lista$/i
 handler.group = true
 handler.admin = true
 export default handler
