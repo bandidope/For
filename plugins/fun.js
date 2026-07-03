@@ -14,8 +14,8 @@ if (command == 'vibra') {
 
 else if (command == 'suerte') {
     let premios = [
-        'Bot Personalizado 🌀', 'Bot para Grupo VIP 👑', 'Comando a tu gusto ⚡',
-        '10 soles al yape 💸', 'Nada 😢 Suerte para la próxima'
+        'Bot Personalizado 🌀', 'Bot para Grupo VIP 👑',
+        ''Nada 😢 Suerte para la próxima'
     ]
     let premio = premios[Math.floor(Math.random() * premios.length)]
     return m.reply(`*RULETA FOR THREE* 🎰\n\n@${m.sender.split('@')[0]} te tocó: *${premio}*\n\nSi ganaste algo escríbeme: wa.me/51936994155`, null, { mentions: [m.sender] })
