@@ -1,105 +1,81 @@
-import fs from 'fs'
-import path from 'path'
-
-const diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
-const diasValidos = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'extra']
-const diasBorrar = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
-const emojiDia = '-'
-const IMAGEN_FALLBACK = 'https://raw.githubusercontent.com/bandidope/Fotos/refs/heads/master/fotos/logo.png'
-const MARCA = 'For Three Bot'
+// LISTA v1.2 - CON AVISO DOMINGO - FOR THREE CLEAN
 const TZ = 'America/Lima'
+const IMG_FALLBACK = 'https://raw.githubusercontent.com/bandidope/Fotos/refs/heads/master/fotos/logo.png'
+const DIAS = ['lunes','martes','miercoles','jueves','viernes','sabado']
+const ALL = [...DIAS, 'extra']
+const TAG = {lunes:'✅',martes:'✅',miercoles:'✅',jueves:'✅',viernes:'✅',sabado:'✅',extra:'📦',domingo:'🛒'}
 
-const getDB = () => {
-  global.db.data.sorteo??= {lunes:[], martes:[], miercoles:[], jueves:[], viernes:[], sabado:[], extra:[]}
-  return global.db.data.sorteo
+const getDB = (chatId) => {
+  global.db.data.listaV2 ||= {}
+  global.db.data.listaV2[chatId] ||= Object.fromEntries(ALL.map(d => [d, []]))
+  return global.db.data.listaV2[chatId]
 }
 
-const getHoy = () => {
-  let diaES = new Date().toLocaleString('es-PE', { timeZone: TZ, weekday: 'long' }).toLowerCase()
-  diaES = diaES.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+const hoyInfo = () => {
+  let d = new Date().toLocaleString('es-PE', { timeZone: TZ, weekday: 'long' }).toLowerCase()
+  d = d.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  let esDomingo = d === 'domingo'
   return {
-    diaReal: diaES,
-    diaDB: diaES === 'domingo'? 'extra' : diaES,
-    esDomingo: diaES === 'domingo'
+    diaDB: esDomingo? 'extra' : d,
+    esDomingo
   }
 }
 
-let handler = async (m, { conn, text, args, isAdmin, isOwner }) => {
-  await conn.sendMessage(m.chat, { react: { text: '•', key: m.key } }).catch(_=>{})
+let handler = async (m, { conn, args, isAdmin, isOwner }) => {
+  let db = getDB(m.chat)
+  let op = args[0]?.toLowerCase()
+  let { diaDB, esDomingo } = hoyInfo()
 
-  let db = getDB()
-  let sub = args[0]?.toLowerCase()
-  let { diaReal, diaDB, esDomingo } = getHoy()
+  if (!op) return m.reply(
+`📋 *LISTA BOT* | Hoy: *${esDomingo? 'DOMINGO' : diaDB.toUpperCase()}*
+.lista add Nombre | Numero | Premio [| extra]
+.lista ver
+.lista reset -> Borra L-S
+.lista reset extra -> Borra EXTRA`
+  )
 
-  if(sub === 'ver' || sub === 'lista'){
-    let txt = `GANADORES\n»————————> • <————————«\n`
-    for(let dia of diasValidos){
-      txt += `\n${emojiDia} ${dia.charAt(0).toUpperCase() + dia.slice(1)}:\n`
-      if(db[dia]?.length > 0){
-        txt += db[dia].map((v,i)=> {
-          let emojiFinal = ''
-          if(v.tipo === 'domingo') emojiFinal = '🛒' // Domingo auto
-          if(v.tipo === 'manual') emojiFinal = '📦' // EXTRA manual
-          return `# ${v.nombre} / ${v.numero} / ${v.premio} ${emojiFinal}`.trim()
-        }).join('\n')
-      } else {
-        txt += `# (${MARCA})`
-      }
+  // VER
+  if (op === 'ver') {
+    let txt = `📋 *LISTA SEMANAL*\n»————————«\n`
+    for (let d of ALL) {
+      txt += `\n*${d.toUpperCase()}* [${db[d].length}]\n`
+      txt += db[d].length? db[d].map(x => `# ${x.n} | ${x.num} | ${x.p} ${x.tag}`).join('\n') : `> Vacío`
     }
-    let imgGrupo = null
-    try { imgGrupo = await conn.profilePictureUrl(m.chat, 'image') } catch(e) { imgGrupo = IMAGEN_FALLBACK }
-    try { return await conn.sendMessage(m.chat, { image: { url: imgGrupo }, caption: txt.trim() }, { quoted: m }) }
-    catch(e) { return m.reply(`⚠️ Falló la imagen. Te mando solo texto:\n\n${txt.trim()}`) }
+    let img = IMG_FALLBACK
+    try { img = await conn.profilePictureUrl(m.chat, 'image') } catch {}
+    return conn.sendMessage(m.chat, { image: { url: img }, caption: txt }, { quoted: m }).catch(() => m.reply(txt))
   }
 
-  if(sub === 'eliminar' && args[1] === 'extras'){
-    if(!m.isGroup) return m.reply('⚠️ Este comando solo funciona en grupos.')
-    if(!isAdmin &&!isOwner) return m.reply('⚠️ Solo los *admins* del grupo pueden borrar.')
-    db.extra = []
-    await global.db.write()
-    return m.reply('🗑️ *EXTRA ELIMINADO*\nLista de EXTRA limpiada a 0.')
+  // RESET = BORRAR
+  if (op === 'reset') {
+    if (!isAdmin &&!isOwner) return m.reply('❌ Solo admins')
+    let target = args[1] === 'extra'? ['extra'] : DIAS
+    target.forEach(d => db[d] = [])
+    await global.db.write().catch(()=>{})
+    return m.reply(`🗑️ Reset: *${target.join(', ').toUpperCase()}*`)
   }
 
-  if(sub === 'eliminar'){
-    if(!m.isGroup) return m.reply('⚠️ Este comando solo funciona en grupos.')
-    if(!isAdmin &&!isOwner) return m.reply('⚠️ Solo los *admins* del grupo pueden borrar toda la lista.')
-    if(args[1]!== 'si') return m.reply(`⚠️ *PELIGRO*\nEsto borrará Lunes a Sábado.\n*EXTRA se queda intacto.*\n\nEscribe:.lista eliminar si\npara confirmar.`)
-    for(let dia of diasBorrar){ db[dia] = [] }
-    await global.db.write()
-    return m.reply('🗑️ *Lista Lunes-Sábado eliminada.*\n*EXTRA se mantuvo.*')
+  // ADD = ANOTAR CON AVISO SI ES DOMINGO
+  if (op === 'add') {
+    let raw = args.slice(1).join(' ')
+    if (!raw.includes('|')) return m.reply('Formato:.lista add Nombre | Numero | Premio [| extra]')
+    let [n, num, p, forzado] = raw.split('|').map(v => v.trim())
+    if (!n ||!num ||!p) return m.reply('Faltan datos')
+
+    let dia = forzado?.toLowerCase() === 'extra'? 'extra' : diaDB
+    let tag = dia === 'extra'? (esDomingo? TAG.domingo : TAG.extra) : TAG[dia]
+
+    db[dia].push({ n, num, p, tag })
+    await global.db.write().catch(()=>{})
+
+    let aviso = esDomingo? `⚠️ *Es DOMINGO - Día de Ventas*\nSe guardó en EXTRA automático 🛒\n\n` : ''
+    return m.reply(`${aviso}${tag} *${dia.toUpperCase()}*\n# ${n} | ${num} | ${p}`)
   }
-
-  if (!text.includes('/')) return m.reply(`🎯 *LISTA GRUPO SIN LÍMITE*
-.lista Nombre / Numero / Premio
-.lista Nombre / Numero / Premio / extra
-*Auto: ${diaDB.toUpperCase()}*
-.lista ver |.lista eliminar si |.lista eliminar extras`)
-
-  let partes = text.split('/').map(v => v.trim())
-  let [nombre, numero, premio, diaForzado] = partes
-  let dia = diaForzado?.toLowerCase() === 'extra'? 'extra' : diaDB
-
-  // [UPDATE] UPDATE: Si pones /extra manda manual siempre, aunque sea domingo
-  let tipo = dia === 'extra'? 'manual' : ''
-
-  if (!nombre ||!numero ||!premio) {
-    return m.reply(`Formato mal.\nUsa:.lista Nombre / Numero / Premio`)
-  }
-
-  numero = numero.replace(/\s/g, '')
-
-  db[dia]??= []
-  db[dia].push({nombre, premio, numero, tipo})
-  await global.db.write()
-
-  let emojiTag = dia === 'extra'? (tipo === 'manual'? '📦' : '🛒') : '✅'
-  let msg = `${emojiTag} *Anotado en ${dia.toUpperCase()}*\n# ${nombre} / ${numero} / ${premio}`
-
-  m.reply(msg)
 }
 
-handler.help = ['lista ( Sorteos )']
+handler.help = ['lista']
 handler.tags = ['main']
 handler.command = /^lista$/i
 handler.group = true
+handler.admin = true
 export default handler
