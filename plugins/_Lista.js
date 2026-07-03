@@ -1,6 +1,5 @@
 let handler = async (m, { conn, args, isAdmin, isOwner }) => {
   let chat = m.chat
-  let user = m.sender
 
   // 1. CREAR DB SI NO EXISTE
   if (!global.db.data.lista) global.db.data.lista = {}
@@ -22,8 +21,8 @@ let handler = async (m, { conn, args, isAdmin, isOwner }) => {
   if (!op) return m.reply(`*LISTA BOT*
 Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
 
-.lista add Nombre | Numero | Premio
-.lista add Nombre | Numero | Premio | extra
+.lista Nombre | Numero | Premio
+.lista Nombre | Numero | Premio | extra
 .lista ver
 .lista reset
 .lista reset extra`)
@@ -44,12 +43,10 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
     }
     texto = texto.trim()
 
-    // Intentar sacar la foto del grupo
     try {
       let pp = await conn.profilePictureUrl(chat, 'image')
       return conn.sendFile(chat, pp, 'lista.jpg', texto, m)
     } catch {
-      // Si el grupo no tiene foto, manda solo texto
       return m.reply(texto)
     }
   }
@@ -68,26 +65,28 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
     return
   }
 
-  // 6. ADD/ANOTAR
-  if (op === 'add') {
-    let juntar = args.slice(1).join(' ')
-    let sep = juntar.split('|').map(v => v.trim())
-    let [nombre, numero, premio, extra] = sep
+  // 6. ANOTAR DIRECTO SIN ADD
+  let juntar = args.join(' ')
+  let sep = juntar.split('|').map(v => v.trim())
+  let [nombre, numero, premio, extra] = sep
 
-    if (!nombre ||!numero ||!premio) return m.reply('Formato mal. Usa:.lista add Nombre | Numero | Premio')
+  if (!nombre ||!numero ||!premio) return m.reply('Formato mal. Usa:.lista Nombre | Numero | Premio')
 
-    let guardarEn = extra?.toLowerCase() === 'extra'? 'extra' : diaGuardar
-    let tag = guardarEn === 'extra'? (esDomingo? '🛒' : '📦') : '✅'
+  let guardarEn = extra?.toLowerCase() === 'extra'? 'extra' : diaGuardar
+  let tag = guardarEn === 'extra'? (esDomingo? '🛒' : '📦') : '✅'
 
-    db[guardarEn].push({n: nombre, num: numero, p: premio, tag: tag})
-    global.db.write()
+  db[guardarEn].push({n: nombre, num: numero, p: premio, tag: tag})
+  global.db.write()
 
-    let aviso = esDomingo? '⚠️ *DOMINGO - Dia de Ventas*\nSe guardo en EXTRA 🛒\n\n' : ''
-    return m.reply(`${aviso}${tag} *${guardarEn.toUpperCase()}*\n# ${nombre} | ${numero} | ${premio}`)
-  }
+  let aviso = esDomingo? '⚠️ *DOMINGO - Dia de Ventas*\nSe guardo en EXTRA 🛒\n\n' : ''
+  return m.reply(`${aviso}${tag} *${guardarEn.toUpperCase()}*\n# ${nombre} | ${numero} | ${premio}`)
 }
 
-handler.help = ['lista add Nombre | Numero | Premio', 'lista ver', 'lista reset']
+handler.help = [
+  'lista Nombre | Numero | Premio',
+  'lista ver',
+  'lista reset'
+]
 handler.tags = ['sorteos']
 handler.command = ['lista']
 handler.group = true
