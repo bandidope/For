@@ -2,12 +2,12 @@ let handler = async (m, { conn, args, isAdmin, isOwner }) => {
   let chat = m.chat
   let user = m.sender
 
-  // 1. CREAR DB SI NO EXISTE
+  // 1. CREAR DB SI NO EXISTE - POR CHAT
   if (!global.db.data.lista) global.db.data.lista = {}
-  if (!global.db.data.lista[chat]) global.db.data.lista[chat] = {
+  if (!global.db.data.lista) global.db.data.lista = {
     lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [], extra: []
   }
-  let db = global.db.data.lista[chat]
+  let db = global.db.data.lista
 
   // 2. SACAR DIA DE LIMA
   let tz = 'America/Lima'
@@ -16,7 +16,7 @@ let handler = async (m, { conn, args, isAdmin, isOwner }) => {
   let esDomingo = dia === 'domingo'
   let diaGuardar = esDomingo? 'extra' : dia
 
-  let op = args[0]
+  let op = args[0]?.toLowerCase()
 
   // 3. MENU
   if (!op) return m.reply(`*LISTA BOT*
@@ -28,7 +28,7 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
 .lista reset
 .lista reset extra`)
 
-  // 4. VER LISTA
+  // 4. VER LISTA - CON FOTO DEL GRUPO
   if (op === 'ver') {
     let texto = `📋 *LISTA SEMANAL*\n\n`
     for (let d of ['lunes','martes','miercoles','jueves','viernes','sabado','extra']) {
@@ -42,7 +42,16 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
       }
       texto += `\n`
     }
-    return m.reply(texto.trim())
+    texto = texto.trim()
+
+    // ESTO DETECTA LA FOTO
+    try {
+      let pp = await conn.profilePictureUrl(chat, 'image')
+      return await conn.sendFile(chat, pp, 'lista.jpg', texto, m)
+    } catch {
+      // Si no tiene foto o da error, manda solo texto
+      return m.reply(texto)
+    }
   }
 
   // 5. RESET/BORRAR
@@ -50,13 +59,13 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
     if (!isAdmin &&!isOwner) return m.reply('❌ Solo admins')
     if (args[1] === 'extra') {
       db.extra = []
-      m.reply('🗑️ EXTRA borrado')
+      global.db.write()
+      return m.reply('🗑️ EXTRA borrado')
     } else {
       for (let d of ['lunes','martes','miercoles','jueves','viernes','sabado']) db[d] = []
-      m.reply('🗑️ Lunes a Sabado borrado. EXTRA sigue')
+      global.db.write()
+      return m.reply('🗑️ Lunes a Sabado borrado. EXTRA sigue')
     }
-    global.db.write()
-    return
   }
 
   // 6. ADD/ANOTAR
