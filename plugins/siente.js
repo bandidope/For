@@ -5,8 +5,6 @@ console.log('================================')
 global.juegos = global.juegos || {}
 
 let handler = async (m, { conn, command }) => {
-    console.log('COMANDO SIENTE EJECUTADO POR:', m.sender)
-    
     let chat = m.chat
     if (command == 'siente') {
         if (chat in global.juegos) return conn.reply(m.chat, `❌ Ya hay partida. Usa ${usedPrefix}terminar`, m)
@@ -30,14 +28,20 @@ let handler = async (m, { conn, command }) => {
     let otro = j.turno == j.p1? j.p2 : j.p1
     if (m.mentionedJid?.[0] == otro) {
         j.turno = otro
-        await conn.sendMessage(m.chat, { react: { text: '😏', key: m.key } })
+        // CAMBIO AQUÍ: Formato reacción para Bandidope/For
+        await conn.sendMessage(m.chat, { 
+            react: { 
+                text: '😏', 
+                key: m.key 
+            } 
+        })
         return conn.sendMessage(chat, { text: `🔥 ¿QUÉ SE SIENTE? 🔥\n\n@${j.p1.split`@`[0]} vs @${j.p2.split`@`[0]}\n\n👉 TURNO: @${otro.split`@`[0]}`, mentions: [j.p1, j.p2, otro] }, { quoted: m })
     }
 }
 
 handler.help = ['siente', 'terminar']
 handler.tags = ['fun']
-handler.command = ['siente', 'terminar'] // ARRAY para ESM
+handler.command = ['siente', 'terminar']
 handler.group = true
 
-export default handler // CLAVE: ESM, no CommonJS
+export default handler
