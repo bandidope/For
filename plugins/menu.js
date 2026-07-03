@@ -2,7 +2,6 @@ let handler = async (m, { conn, usedPrefix }) => {
   let taguser = '@' + m.sender.split('@')[0]
   const imgUrl = 'https://files.evogb.win/7Rs2Rz.jpg'
 
-  // [1] AGRUPAR TODO POR CATEGORIAS
   let plugins = Object.values(global.plugins).filter(p =>!p.disabled && p.help)
   let groups = {}
   for (let p of plugins) {
@@ -12,30 +11,32 @@ let handler = async (m, { conn, usedPrefix }) => {
     }
   }
   
-  // [2] ORDENAR: VENTAS BOT PRIMERO, LUEGO EL RESTO A-Z
+  // Orden de categorías: VENTAS > SORTEOS > INFO > MAIN > El resto A-Z
+  let orden = ['ventas bot', 'sorteos', 'info', 'main']
   let categories = Object.keys(groups)
   categories.sort((a, b) => {
-    if (a.toLowerCase() === 'ventas bot') return -1 // <-- Manda ventas bot arriba
-    if (b.toLowerCase() === 'ventas bot') return 1
-    return a.localeCompare(b) // <-- El resto normal A-Z
+    let ia = orden.indexOf(a.toLowerCase())
+    let ib = orden.indexOf(b.toLowerCase())
+    if (ia!== -1 && ib!== -1) return ia - ib // Los 2 están en el orden
+    if (ia!== -1) return -1 // Solo a está en el orden = va primero
+    if (ib!== -1) return 1 // Solo b está en el orden = va primero
+    return a.localeCompare(b) // El resto A-Z
   })
 
-  // [3] ARMAR EL TEXTO
-  let menuTxt = `*🤖 [ For Three Bot ]* 🤖\n\n`
+  let menuTxt = `*🤖 [ FOR THREE BOT ]* 🤖\n\n`
   menuTxt += `👤 Usuario: ${taguser}\n⚙️ Prefijo: [ ${usedPrefix} ]\n`
-  menuTxt += `📦 Total Plugins: ${plugins.length}\n📂 Categorías: ${categories.length}\n\n`
-  menuTxt += `━━━━━━━━━━━━━━\n\n`
+  menuTxt += `📦 Total: ${plugins.length} | 📂 Cats: ${categories.length}\n\n`
+  menuTxt += `━━━━━━━━━━━\n\n`
   
   for (let tag of categories) {
     menuTxt += `*🗂️ ${tag.toUpperCase()}* [${groups[tag].length}]\n`
     menuTxt += groups[tag].map(v => `> 🌀 ${usedPrefix}${v}`).join('\n')
-    menuTxt += `\n\n━━━━━━━━━━━━━━\n\n`
+    menuTxt += `\n\n━━━━━━━━━━━━━━━━━━━\n\n`
   }
   
   menuTxt += `👑 *Creador:* ${usedPrefix}creador\n`
-  menuTxt += `> Sistema v3 🌀`
+  menuTxt += `> Sistema v3.1 🌀`
 
-  // [4] MANDAR FOTO + TEXTO
   await conn.sendMessage(m.chat, {
     image: { url: imgUrl },
     caption: menuTxt,
