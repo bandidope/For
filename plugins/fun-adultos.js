@@ -2,7 +2,7 @@ let handler = async (m, { conn, usedPrefix, command }) => {
     let who = m.mentionedJid[0] || m.sender
 
     if (command == 'violar') {
-        if (!m.mentionedJid[0]) return m.reply(`Menciona a quien 😈\n${usedPrefix}violar @tag`)
+        if (!m.mentionedJid[0]) return m.reply(`Menciona a quien 😈\nEjemplo: ${usedPrefix}violar @tag`)
         let lugares = ['en el baño', 'en la cocina', 'en el parque', 'en el cuarto', 'en el carro', 'en la ducha']
         let lugar = lugares[Math.floor(Math.random() * lugares.length)]
         let texto = `😈 @${m.sender.split('@')[0]} violó a @${who.split('@')[0]} ${lugar}`
@@ -10,7 +10,7 @@ let handler = async (m, { conn, usedPrefix, command }) => {
     }
 
     if (command == 'follar') {
-        if (!m.mentionedJid[0]) return m.reply(`Menciona a alguien 😏\n${usedPrefix}follar @tag`)
+        if (!m.mentionedJid[0]) return m.reply(`Menciona a alguien 😏\nEjemplo: ${usedPrefix}follar @tag`)
         if (who == m.sender) return m.reply('Automamada no cuenta')
         let pos = ['perrito', 'misionero', 'vaquera', '69', 'de ladito', 'contra la pared']
         let posicion = pos[Math.floor(Math.random() * pos.length)]
@@ -19,13 +19,13 @@ let handler = async (m, { conn, usedPrefix, command }) => {
     }
 
     if (command == 'nalgada') {
-        if (!m.mentionedJid[0]) return m.reply(`Menciona a quien nalguear 🍑\n${usedPrefix}nalgada @tag`)
+        if (!m.mentionedJid[0]) return m.reply(`Menciona a quien nalguear 🍑\nEjemplo: ${usedPrefix}nalgada @tag`)
         let texto = `👋 *PAM!* @${m.sender.split('@')[0]} le dio una nalgada a @${who.split('@')[0]}`
         return conn.reply(m.chat, texto, m, { mentions: [m.sender, who] })
     }
 
     if (command == 'lamer') {
-        if (!m.mentionedJid[0]) return m.reply(`Menciona a quien lamer 👅\n${usedPrefix}lamer @tag`)
+        if (!m.mentionedJid[0]) return m.reply(`Menciona a quien lamer 👅\nEjemplo: ${usedPrefix}lamer @tag`)
         let partes = ['el cuello', 'las orejas', 'la panza', 'los pies', 'todo el cuerpo']
         let parte = partes[Math.floor(Math.random() * partes.length)]
         let texto = `👅 @${m.sender.split('@')[0]} le está lamiendo ${parte} a @${who.split('@')[0]}`
@@ -33,13 +33,13 @@ let handler = async (m, { conn, usedPrefix, command }) => {
     }
 
     if (command == 'chupar') {
-        if (!m.mentionedJid[0]) return m.reply(`Menciona a quien 😏\n${usedPrefix}chupar @tag`)
+        if (!m.mentionedJid[0]) return m.reply(`Menciona a quien 😏\nEjemplo: ${usedPrefix}chupar @tag`)
         let texto = `😏 @${m.sender.split('@')[0]} le está chupando a @${who.split('@')[0]}`
         return conn.reply(m.chat, texto, m, { mentions: [m.sender, who] })
     }
 
     if (command == 'mamar') {
-        if (!m.mentionedJid[0]) return m.reply(`Menciona a quien 😈\n${usedPrefix}mamar @tag`)
+        if (!m.mentionedJid[0]) return m.reply(`Menciona a quien 😈\nEjemplo: ${usedPrefix}mamar @tag`)
         let texto = `🤤 @${m.sender.split('@')[0]} le está mamando a @${who.split('@')[0]}`
         return conn.reply(m.chat, texto, m, { mentions: [m.sender, who] })
     }
@@ -73,7 +73,18 @@ let handler = async (m, { conn, usedPrefix, command }) => {
     }
 }
 
-handler.help = ['violar', 'follar', 'nalgada', 'lamer', 'chupar', 'mamar', 'tetas', 'pene', 'culo', 'caliente']
-handler.tags = ['+18']
+handler.help = [
+    'violar @tag',
+    'follar @tag',
+    'nalgada @tag',
+    'lamer @tag',
+    'chupar @tag',
+    'mamar @tag',
+    'tetas @tag',
+    'pene @tag',
+    'culo @tag',
+    'caliente @tag'
+]
+handler.tags = ['fun']
 handler.command = ['violar', 'follar', 'nalgada', 'lamer', 'chupar', 'mamar', 'tetas', 'pene', 'culo', 'caliente']
 export default handler
