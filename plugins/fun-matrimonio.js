@@ -4,18 +4,21 @@ let handler = async (m, { conn, command }) => {
     chatData.matrimonios = chatData.matrimonios || {}
     chatData.pedidas = chatData.pedidas || {}
 
-    let quien = m.sender.replace(/@lid/g, '@s.whatsapp.net') // [FIX LID]
-    let conQuien = m.mentionedJid?.[0]?.replace(/@lid/g, '@s.whatsapp.net') // [FIX LID]
+    // [FIX TOTAL] Sacar solo el numero sin importar si es @lid o @s.whatsapp.net
+    let getNum = (jid) => jid?.split('@')[0] + '@s.whatsapp.net'
+    
+    let quien = getNum(m.sender)
+    let conQuien = getNum(m.mentionedJid?.[0])
 
     // ===== PEDIR =====
     if (command == 'pedir') {
-        if (!conQuien) return m.reply('❌ Etiqueta a alguien\n*Ejemplo:*.pedir @user')
-        if (conQuien == quien) return m.reply('❌ No te puedes casar contigo mismo')
+        if (!m.mentionedJid?.[0]) return m.reply('❌ Etiqueta a alguien\n*Ejemplo:*.pedir @user')
+        if (quien == conQuien) return m.reply('❌ No te puedes casar contigo mismo')
         if (chatData.matrimonios[quien]) return m.reply('❌ Ya estás casado')
         if (chatData.matrimonios[conQuien]) return m.reply(`❌ @${conQuien.split('@')[0]} ya está casado/a`, null, { mentions: [conQuien] })
         if (chatData.pedidas[conQuien]) return m.reply('❌ Esa persona ya tiene una propuesta pendiente')
 
-        chatData.pedidas[conQuien] = quien // Guardamos con JID normal
+        chatData.pedidas[conQuien] = quien
 
         let txt = `💍 *PEDIDA DE MANO* 💍\n\n@${quien.split('@')[0]} le ha pedido matrimonio a @${conQuien.split('@')[0]}\n\n@${conQuien.split('@')[0]} usa.aceptar o.rechazar`
         return conn.sendMessage(chat, { text: txt, mentions: [quien, conQuien] })
@@ -23,7 +26,7 @@ let handler = async (m, { conn, command }) => {
 
     // ===== ACEPTAR =====
     if (command == 'aceptar') {
-        let pedidor = chatData.pedidas[quien] // Busca con JID normal
+        let pedidor = chatData.pedidas[quien]
         if (!pedidor) return m.reply('❌ No tienes ninguna propuesta de matrimonio')
 
         chatData.matrimonios[quien] = pedidor
@@ -58,7 +61,7 @@ let handler = async (m, { conn, command }) => {
 
     // ===== PAREJA =====
     if (command == 'pareja') {
-        let objetivo = conQuien || quien
+        let objetivo = getNum(m.mentionedJid?.[0]) || quien
         let pareja = chatData.matrimonios[objetivo]
 
         if (!pareja) return m.reply(`@${objetivo.split('@')[0]} está soltero/a`, null, { mentions: [objetivo] })
