@@ -1,12 +1,12 @@
 let handler = async (m, { conn, args, isAdmin, isOwner }) => {
   let chat = m.chat
 
-  // DB por chat
+  // 1. CREAR DB POR CHAT - ESTE ERA EL BUG
   if (!global.db.data.lista) global.db.data.lista = {}
   if (!global.db.data.lista) global.db.data.lista = {
     lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [], extra: []
   }
-  let db = global.db.data.lista
+  let db = global.db.data.lista // por chat
 
   let tz = 'America/Lima'
   let dia = new Date().toLocaleString('es-PE', { timeZone: tz, weekday: 'long' }).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -15,7 +15,6 @@ let handler = async (m, { conn, args, isAdmin, isOwner }) => {
 
   let op = args[0]?.toLowerCase()
 
-  // 1. MENU
   if (!op) {
     return m.reply(`*LISTA BOT*
 Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
@@ -27,7 +26,6 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
 .lista reset extra`)
   } 
   
-  // 2. VER
   else if (op === 'ver') {
     let texto = `📋 *LISTA SEMANAL*\n\n`
     for (let d of ['lunes','martes','miercoles','jueves','viernes','sabado','extra']) {
@@ -42,7 +40,6 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
     }
   }
 
-  // 3. RESET
   else if (op === 'reset') {
     if (!isAdmin &&!isOwner) return m.reply('❌ Solo admins')
     if (args[1] === 'extra') {
@@ -54,7 +51,6 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
     return m.reply(args[1] === 'extra'? '🗑️ EXTRA borrado' : '🗑️ Lunes a Sabado borrado. EXTRA sigue')
   }
 
-  // 4. ADD
   else if (op === 'add') {
     let juntar = args.slice(1).join(' ')
     let sep = juntar.split('|').map(v => v.trim())
@@ -69,11 +65,6 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
 
     let aviso = esDomingo? '⚠️ *DOMINGO - Dia de Ventas*\nSe guardo en EXTRA 🛒\n\n' : ''
     return m.reply(`${aviso}${tag} *${guardarEn.toUpperCase()}*\n# ${nombre} | ${numero} | ${premio}`)
-  }
-
-  // 5. SI NO ES NADA
-  else {
-    return m.reply('Opcion no valida. Usa:.lista add,.lista ver o.lista reset')
   }
 }
 
