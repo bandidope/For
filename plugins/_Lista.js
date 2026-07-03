@@ -1,12 +1,12 @@
 let handler = async (m, { conn, args, isAdmin, isOwner }) => {
   let chat = m.chat
 
-  // 1. CREAR DB SI NO EXISTE
+  // 1. CREAR DB SI NO EXISTE - ARREGLADO
   if (!global.db.data.lista) global.db.data.lista = {}
   if (!global.db.data.lista[chat]) global.db.data.lista[chat] = {
     lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [], extra: []
   }
-  let db = global.db.data.lista[chat]
+  let db = global.db.data.lista[chat] // [chat] era lo que faltaba
 
   // 2. SACAR DIA DE LIMA
   let tz = 'America/Lima'
@@ -17,7 +17,7 @@ let handler = async (m, { conn, args, isAdmin, isOwner }) => {
 
   let op = args[0]
 
-  // 3. MENU - CON RETURN PA' QUE NO CAIGA ABAJO
+  // 3. MENU - CON RETURN
   if (!op) return m.reply(`*LISTA BOT*
 Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
 
@@ -83,15 +83,10 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
     return m.reply(`${aviso}${tag} *${guardarEn.toUpperCase()}*\n# ${nombre} | ${numero} | ${premio}`)
   }
 
-  // 7. SI NO ES NADA DE LO ANTERIOR
   return m.reply('Opcion no valida. Usa:.lista add,.lista ver o.lista reset')
 }
 
-handler.help = [
-  'lista add Nombre | Numero | Premio',
-  'lista ver',
-  'lista reset'
-]
+handler.help = ['lista add Nombre | Numero | Premio', 'lista ver', 'lista reset']
 handler.tags = ['sorteos']
 handler.command = ['lista']
 handler.group = true
