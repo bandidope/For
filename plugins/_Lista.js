@@ -1,6 +1,5 @@
 let handler = async (m, { conn, args, isAdmin, isOwner }) => {
   let chat = m.chat
-  let user = m.sender
 
   // 1. CREAR DB SI NO EXISTE - POR CHAT
   if (!global.db.data.lista) global.db.data.lista = {}
@@ -28,30 +27,14 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
 .lista reset
 .lista reset extra`)
 
-  // 4. VER LISTA - CON FOTO DEL GRUPO
+  // 4. VER LISTA - SIN FOTO, SIN AWAIT. ESTO SÍ JALA
   if (op === 'ver') {
     let texto = `📋 *LISTA SEMANAL*\n\n`
     for (let d of ['lunes','martes','miercoles','jueves','viernes','sabado','extra']) {
       texto += `*${d.toUpperCase()}* [${db[d].length}]\n`
-      if (db[d].length > 0) {
-        for (let i of db[d]) {
-          texto += `# ${i.n} | ${i.num} | ${i.p} ${i.tag}\n`
-        }
-      } else {
-        texto += `> Vacío\n`
-      }
-      texto += `\n`
+      texto += db[d].length > 0? db[d].map(i => `# ${i.n} | ${i.num} | ${i.p} ${i.tag}`).join('\n') + '\n\n' : '> Vacío\n'
     }
-    texto = texto.trim()
-
-    // ESTO DETECTA LA FOTO
-    try {
-      let pp = await conn.profilePictureUrl(chat, 'image')
-      return await conn.sendFile(chat, pp, 'lista.jpg', texto, m)
-    } catch {
-      // Si no tiene foto o da error, manda solo texto
-      return m.reply(texto)
-    }
+    return m.reply(texto.trim()) // <- Solo texto, 0 await
   }
 
   // 5. RESET/BORRAR
@@ -59,13 +42,11 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
     if (!isAdmin &&!isOwner) return m.reply('❌ Solo admins')
     if (args[1] === 'extra') {
       db.extra = []
-      global.db.write()
-      return m.reply('🗑️ EXTRA borrado')
     } else {
       for (let d of ['lunes','martes','miercoles','jueves','viernes','sabado']) db[d] = []
-      global.db.write()
-      return m.reply('🗑️ Lunes a Sabado borrado. EXTRA sigue')
     }
+    global.db.write()
+    return m.reply(args[1] === 'extra'? '🗑️ EXTRA borrado' : '🗑️ Lunes a Sabado borrado. EXTRA sigue')
   }
 
   // 6. ADD/ANOTAR
