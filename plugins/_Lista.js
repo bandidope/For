@@ -98,7 +98,7 @@ let handler = async (m, { conn, text, args, isAdmin, isOwner }) => {
   m.reply(msg)
 }
 
-handler.help = ['lista']
+handler.help = ['lista ( Lunes A Domingo']
 handler.tags = ['main']
 handler.command = /^lista$/i
 handler.group = true
