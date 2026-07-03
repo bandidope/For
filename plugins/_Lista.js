@@ -1,71 +1,84 @@
-// DIAS v1.3 - TEXTO PERSONALIZADO - FOR THREE
-let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
+let handler = async (m, { conn, args, isAdmin, isOwner }) => {
   let chat = m.chat
-  let cmd = command.toLowerCase()
-  let dias = ['lunes','martes','miercoles','jueves','viernes','sabado']
+  let user = m.sender
 
-  // 1. CREAR DB
-  if (!global.db.data.dias) global.db.data.dias = {
-    lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: []
+  // 1. CREAR DB SI NO EXISTE
+  if (!global.db.data.lista) global.db.data.lista = {}
+  if (!global.db.data.lista[chat]) global.db.data.lista[chat] = {
+    lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [], extra: []
   }
-  let db = global.db.data.dias
+  let db = global.db.data.lista[chat]
 
-  // 2. SETDIA -> ANOTAR CON TEXTO
-  if (cmd.startsWith('set')) {
-    if (!isAdmin &&!isOwner) return m.reply('❌ Solo admins')
-    let dia = cmd.replace('set','')
-    if (!dias.includes(dia)) return m.reply('Dia invalido')
+  // 2. SACAR DIA DE LIMA
+  let tz = 'America/Lima'
+  let dia = new Date().toLocaleString('es-PE', { timeZone: tz, weekday: 'long' }).toLowerCase()
+  dia = dia.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  let esDomingo = dia === 'domingo'
+  let diaGuardar = esDomingo? 'extra' : dia
 
-    let mentions = m.mentionedJid
-    if (!mentions || mentions.length === 0) return m.reply(`Ejemplo:.set${dia} Texto | @usuario1 @usuario2`)
+  let op = args[0]
 
-    // Sacar texto antes del |
-    let textoCustom = ''
-    let fullText = args.join(' ')
-    if (fullText.includes('|')) {
-      textoCustom = fullText.split('|')[0].trim()
+  // 3. MENU
+  if (!op) return m.reply(`*LISTA BOT*
+Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
+
+.lista add Nombre | Numero | Premio
+.lista add Nombre | Numero | Premio | extra
+.lista ver
+.lista reset
+.lista reset extra`)
+
+  // 4. VER LISTA
+  if (op === 'ver') {
+    let texto = `📋 *LISTA SEMANAL*\n\n`
+    for (let d of ['lunes','martes','miercoles','jueves','viernes','sabado','extra']) {
+      texto += `*${d.toUpperCase()}* [${db[d].length}]\n`
+      if (db[d].length > 0) {
+        for (let i of db[d]) {
+          texto += `# ${i.n} | ${i.num} | ${i.p} ${i.tag}\n`
+        }
+      } else {
+        texto += `> Vacío\n`
+      }
+      texto += `\n`
     }
-
-    let nuevos = mentions.filter(x =>!db[dia].includes(x))
-    if (nuevos.length === 0) return m.reply(`> Ya estaban todos en ${dia.toUpperCase()}`)
-
-    db[dia].push(...nuevos)
-    global.db.write()
-
-    let nombres = nuevos.map(jid => '@' + jid.split('@')[0]).join(' ')
-    let titulo = textoCustom? `*${textoCustom}*` : `✅ Agregado a *${dia.toUpperCase()}*`
-    return m.reply(`${titulo}:\n${nombres}`, null, {mentions: nuevos})
+    return m.reply(texto.trim())
   }
 
-  // 3. RESETDIA -> BORRAR
-  if (cmd.startsWith('reset')) {
+  // 5. RESET/BORRAR
+  if (op === 'reset') {
     if (!isAdmin &&!isOwner) return m.reply('❌ Solo admins')
-    let dia = cmd.replace('reset','')
-    if (!dias.includes(dia)) return m.reply('Dia invalido')
-
-    let total = db[dia].length
-    db[dia] = []
+    if (args[1] === 'extra') {
+      db.extra = []
+      m.reply('🗑️ EXTRA borrado')
+    } else {
+      for (let d of ['lunes','martes','miercoles','jueves','viernes','sabado']) db[d] = []
+      m.reply('🗑️ Lunes a Sabado borrado. EXTRA sigue')
+    }
     global.db.write()
-    return m.reply(`🗑️ *${dia.toUpperCase()}* borrado. Se eliminaron ${total} personas.`)
+    return
   }
 
-  // 4. DIA -> VER CON TEXTO
-  if (dias.includes(cmd)) {
-    let dia = cmd
-    if (db[dia].length === 0) return m.reply(`*${dia.toUpperCase()}*\n> Vacío`)
+  // 6. ADD/ANOTAR
+  if (op === 'add') {
+    let juntar = args.slice(1).join(' ')
+    let sep = juntar.split('|').map(v => v.trim())
+    let [nombre, numero, premio, extra] = sep
 
-    let texto = `📅 *${dia.toUpperCase()}* [${db[dia].length}]\n\n`
-    texto += db[dia].map((jid, i) => `${i+1}. @${jid.split('@')[0]}`).join('\n')
-    return conn.reply(chat, texto, m, {mentions: db[dia]})
+    if (!nombre ||!numero ||!premio) return m.reply('Formato mal. Usa:.lista add Nombre | Numero | Premio')
+
+    let guardarEn = extra?.toLowerCase() === 'extra'? 'extra' : diaGuardar
+    let tag = guardarEn === 'extra'? (esDomingo? '🛒' : '📦') : '✅'
+
+    db[guardarEn].push({n: nombre, num: numero, p: premio, tag: tag})
+    global.db.write()
+
+    let aviso = esDomingo? '⚠️ *DOMINGO - Dia de Ventas*\nSe guardo en EXTRA 🛒\n\n' : ''
+    return m.reply(`${aviso}${tag} *${guardarEn.toUpperCase()}*\n# ${nombre} | ${numero} | ${premio}`)
   }
 }
 
-handler.help = [
-  'setlunes Texto | @tag', 'lunes', 'resetlunes',
-  'setmartes Texto | @tag', 'martes', 'resetmartes'
-]
-handler.tags = ['staff sorteo']
-handler.command = /^(setlunes|setmartes|setmiercoles|setjueves|setviernes|setsabado|resetlunes|resetmartes|resetmiercoles|resetjueves|resetviernes|resetsabado|lunes|martes|miercoles|jueves|viernes|sabado)$/i
+handler.command = ['lista']
 handler.group = true
 handler.admin = true
 export default handler
