@@ -2,46 +2,33 @@ console.log('================================')
 console.log('PLUGIN SIENTE CARGADO CORRECTAMENTE')
 console.log('================================')
 
-global.juegos = global.juegos || {}
-
-let handler = async (m, { conn, command }) => {
+let handler = async (m, { conn }) => {
     let chat = m.chat
-    if (command == 'siente') {
-        if (chat in global.juegos) return conn.reply(m.chat, `❌ Ya hay partida. Usa ${usedPrefix}terminar`, m)
-        let members = (await conn.groupMetadata(chat)).participants.map(v => v.id).filter(v => v!== conn.user.jid && v!== m.sender)
-        if (members.length < 2) return conn.reply(m.chat, '❌ Mínimo 2 personas más oe', m)
-        let [p1, p2] = members.sort(() => Math.random() - 0.5)
-        global.juegos = { p1, p2, turno: p1 }
-        return conn.sendMessage(chat, { text: `🔥 ¿QUÉ SE SIENTE? 🔥\n\n@${p1.split`@`[0]} vs @${p2.split`@`[0]}\n\n👉 TURNO: @${p1.split`@`[0]}`, mentions: [p1, p2] }, { quoted: m })
+    global.siente = global.siente || {}
+    
+    if (!global.siente[chat]) {
+        let p = (await conn.groupMetadata(chat)).participants.map(v => v.id).filter(v => v!=conn.user.jid && v!=m.sender)
+        if (p.length < 2) return m.reply('Faltan 2')
+        p.sort(() => Math.random() - 0.5)
+        global.siente[chat] = { p1: p[0], p2: p[1], t: p[0] }
+        let g = global.siente[chat]
+        return conn.reply(chat, `🔥 @${g.p1.split`@`[0]} vs @${g.p2.split`@`[0]}\nTURNO: @${g.t.split`@`[0]}`, m, { mentions: [g.p1, g.p2] })
     }
     
-    if (command == 'terminar') {
-        if (!(chat in global.juegos)) return conn.reply(m.chat, 'No hay partida', m)
-        let { p1, p2 } = global.juegos
-        delete global.juegos
-        return conn.sendMessage(chat, { text: `🛑 TERMINADO\n@${p1.split`@`[0]} y @${p2.split`@`[0]}`, mentions: [p1, p2] }, { quoted: m })
+    let g = global.siente[chat]
+    if (m.body == '.terminar') {
+        delete global.siente[chat]
+        return m.reply('Terminado')
     }
-
-    if (!(chat in global.juegos)) return
-    let j = global.juegos
-    if (m.sender!== j.turno) return
-    let otro = j.turno == j.p1? j.p2 : j.p1
-    if (m.mentionedJid?.[0] == otro) {
-        j.turno = otro
-        // CAMBIO AQUÍ: Formato reacción para Bandidope/For
-        await conn.sendMessage(m.chat, { 
-            react: { 
-                text: '😏', 
-                key: m.key 
-            } 
-        })
-        return conn.sendMessage(chat, { text: `🔥 ¿QUÉ SE SIENTE? 🔥\n\n@${j.p1.split`@`[0]} vs @${j.p2.split`@`[0]}\n\n👉 TURNO: @${otro.split`@`[0]}`, mentions: [j.p1, j.p2, otro] }, { quoted: m })
+    if (m.sender!= g.t) return
+    let o = g.t == g.p1? g.p2 : g.p1
+    if (m.mentionedJid[0] == o) {
+        g.t = o
+        return conn.reply(chat, `🔥 @${g.p1.split`@`[0]} vs @${g.p2.split`@`[0]}\nTURNO: @${g.t.split`@`[0]}`, m, { mentions: [g.p1, g.p2, g.t] })
     }
 }
-
-handler.help = ['siente', 'terminar']
-handler.tags = ['fun']
-handler.command = ['siente', 'terminar']
+handler.help = ['siente']
+handler.tags = ['fun'] 
+handler.command = /^(siente|terminar)$/i
 handler.group = true
-
 export default handler
