@@ -72,7 +72,6 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
     let sep = juntar.split('|').map(v => v.trim())
     let [nombre, numero, premio, extra] = sep
 
-    if (!nombre ||!numero ||!premio) return m.reply('Formato mal. Usa:.lista add Nombre | Numero | Premio')
 
     let guardarEn = extra?.toLowerCase() === 'extra'? 'extra' : diaGuardar
     let tag = guardarEn === 'extra'? (esDomingo? '🛒' : '📦') : '✅'
