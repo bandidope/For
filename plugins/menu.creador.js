@@ -22,7 +22,7 @@ let handler = async (m, { conn, usedPrefix }) => {
   }, { quoted: m })
 }
 
-handler.help = ['creador', 'owner', 'dueño']
-handler.tags = ['info'] // <-- AQUÍ ESTÁ EL CAMBIO BRO
-handler.command = /^(creador|owner|dueño|propietario)$/i
+handler.help = ['creador ( Bot De WhatsApp )']
+handler.tags = ['ventasbot'] // <-- AQUÍ ESTÁ EL CAMBIO BRO
+handler.command = /^(creador)$/i
 export default handler
