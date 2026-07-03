@@ -1,60 +1,51 @@
-let handler = async (m, { conn, command, text }) => {
-    let chat = global.db.data.chats // Usamos la db del bot para que no se borre al reiniciar
+const juegos = new Map() // Map es más estable que {}
 
-    if (!chat) global.db.data.chats = {}
-    if (!chat[m.chat]) chat[m.chat] = {}
-    let juego = chat[m.chat].siente
+let handler = async (m, { conn, command }) => {
+    let chat = m.chat
+    let juego = juegos.get(chat)
 
     if (command === 'siente') {
-        if (juego?.activo) return m.reply('❌ Ya hay una partida activa. Usa.terminar')
+        if (juego) return m.reply('❌ Ya hay partida. Usa.terminar')
 
-        let miembros = (await conn.groupMetadata(m.chat)).participants
-          .map(p => p.id)
-          .filter(id => id!== conn.user.jid && id!== m.sender)
+        let miembros = (await conn.groupMetadata(chat)).participants
+         .map(p => p.id)
+         .filter(id =>!id.includes(conn.user.jid) && id!== m.sender)
 
-        if (miembros.length < 2) return m.reply('❌ Se necesitan mínimo 2 personas oe')
+        if (miembros.length < 2) return m.reply('❌ Mínimo 2 personas más oe')
 
-        let p1 = miembros[Math.floor(Math.random() * miembros.length)]
-        let p2 = miembros.filter(v => v!== p1)[0]
+        let [p1, p2] = miembros.sort(() => 0.5 - Math.random()).slice(0, 2)
+        juegos.set(chat, { p1, p2, turno: p1 })
 
-        chat[m.chat].siente = { activo: true, p1, p2, turno: p1 }
-
-        return conn.sendMessage(m.chat, {
-            text: `🔥 *JUEGO: ¿QUÉ SE SIENTE?* 🔥\n\n@${p1.split('@')[0]} vs @${p2.split('@')[0]}\n\n*¿Cómo se juega?*\nEtiqueta a la otra persona cuando sea tu turno.\n\n👉 *TURNO DE:* @${p1.split('@')[0]}`,
+        return conn.sendMessage(chat, {
+            text: `🔥 *QUE SE SIENTE* 🔥\n\n@${p1.split('@')[0]} vs @${p2.split('@')[0]}\n\n👉 Turno: @${p1.split('@')[0]}\nEtiqueta a @${p2.split('@')[0]}`,
             mentions: [p1, p2]
         })
     }
 
     if (command === 'terminar') {
-        if (!juego?.activo) return m.reply('No hay partida activa')
-        let { p1, p2 } = juego
-        chat[m.chat].siente = null
-        return conn.sendMessage(m.chat, {
-            text: `🛑 *PARTIDA TERMINADA*\n@${p1.split('@')[0]} y @${p2.split('@')[0]} ya pararon 😅`,
-            mentions: [p1, p2]
-        })
+        if (!juego) return m.reply('No hay partida')
+        juegos.delete(chat)
+        return m.reply(`🛑 Partida terminada`)
     }
 
-    // Si no es comando, es turno
-    if (!juego?.activo) return
+    if (!juego) return
     if (m.sender!== juego.turno) return
 
     let otro = juego.turno === juego.p1? juego.p2 : juego.p1
-    let tag = m.mentionedJid[0]
 
-    if (tag!== otro) return m.reply(`❌ Etiqueta a @${otro.split('@')[0]}`, null, { mentions: })
+    if (!m.mentionedJid?.[0] || m.mentionedJid[0]!== otro) {
+        return m.reply(`❌ Etiqueta a @${otro.split('@')[0]}`, null, { mentions: })
+    }
 
-    chat[m.chat].siente.turno = otro
+    juegos.set(chat, {...juego, turno: otro })
     await m.react('😏')
 
-    return conn.sendMessage(m.chat, {
-        text: `👉 *TURNO DE:* @${otro.split('@')[0]}`,
-        mentions: [otro]
+    return conn.sendMessage(chat, {
+        text: `👉 Turno: @${otro.split('@')[0]}\nEtiqueta a @${juego.turno === juego.p1? juego.p2 : juego.p1}`,
+        mentions: [otro, juego.turno === juego.p1? juego.p2 : juego.p1]
     })
 }
 
-handler.help = ['siente', 'terminar']
-handler.tags = ['fun']
-handler.command = /^(siente|terminar)$/i
+handler.command = ['siente', 'terminar']
 handler.group = true
 export default handler
