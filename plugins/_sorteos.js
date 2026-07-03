@@ -1,3 +1,5 @@
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms)) // <-- 1. TODO ARRIBA
+
 let ruletaDB = global.db.data.ruleta || (global.db.data.ruleta = {})
 
 const Emojis = ['🟥', '🟦', '🟩', '🟨', '🟪', '🟧', '🟫', '⬛']
@@ -26,7 +28,7 @@ let handler = async (m, { conn, args, command, isAdmin }) => {
         case 'addrl': {
             if (!texto) throw `ꕤ *Uso:*.addrl Nombre2 "Nombre Con Espacios"\n${MARCA}`
 
-            let nombres = parseArgs(texto) // <- NUEVO PARSER
+            let nombres = parseArgs(texto)
             let agregados = []
             for (let name of nombres) {
                 if (!ruletaDB[chatId].some(v => v.toLowerCase() === name.toLowerCase())) {
@@ -75,10 +77,9 @@ let handler = async (m, { conn, args, command, isAdmin }) => {
     }
 }
 
-handler.help = ['addrl', 'delusrl', 'spinrl', 'clearrl', 'listrl']
-handler.tags = ['sorteos']
+handler.help = ['addrl', 'delusrl', 'spinrl', 'clearrl', 'listrl'] // 2. LIMPIO
+handler.tags = ['sorteos'] // 3. CATEGORÍA SORTEOS
 handler.command = /^(addrl|delusrl|spinrl|clearrl|listrl)$/i
-handler.admin = true
+handler.admin = true // Solo admins
 
-export default handler
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
+export default handler // 4. SIEMPRE AL FINAL Y SOLO
