@@ -2,11 +2,11 @@ let handler = async (m, { conn, usedPrefix }) => {
   let taguser = '@' + m.sender.split('@')[0]
   
   let txt = `*👑 [ CREADOR - FOR THREE BOT ]* 👑\n\n`
-  txt += `━━━━━━━━━━━━━━━━━━\n`
+  txt += `━━━━━━━━━━\n`
   txt += `👤 *Nombre:* Yallico\n`
   txt += `📱 *WhatsApp:* wa.me/51936994155\n`
   txt += `👥 *Grupo Oficial:* https://chat.whatsapp.com/LjPhgjqCM934QEzYz3vrVk\n`
-  txt += `━━━━━━━━━━\n\n`
+  txt += `━━━━━━━━━━━━━━━━━━\n\n`
   txt += `> No hagas spam al creador 😅\n`
   txt += `> Solicitado por: ${taguser}`
   
@@ -23,6 +23,6 @@ let handler = async (m, { conn, usedPrefix }) => {
 }
 
 handler.help = ['creador', 'owner', 'dueño']
-handler.tags = ['main']
+handler.tags = ['info'] // <-- AQUÍ ESTÁ EL CAMBIO BRO
 handler.command = /^(creador|owner|dueño|propietario)$/i
 export default handler
