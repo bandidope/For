@@ -32,15 +32,8 @@ if (command == 'nota') {
     if (tipo == 'borrar') { delete global.notas[m.sender]; m.reply(`🗑️ Borrado`) }
 }
 
-if (command == 'modo') {
-    global.modo = global.modo || 'normal'
-    if (!text) return m.reply(`*MODOS* 🌀\nnormal, serio, chistoso, tóxico\nUso: .modo chistoso\nActual: *${global.modo}*`)
-    global.modo = text
-    m.reply(`✅ Modo cambiado a: *${global.modo}*`)
 }
-
-}
-handler.help = ['vibra','frase','suerte','nota','modo']
+handler.help = ['vibra','frase','suerte','nota']
 handler.tags = ['for-three']
-handler.command = ['vibra','frase','suerte','nota','modo']
+handler.command = ['vibra','frase','suerte','nota']
 export default handler
