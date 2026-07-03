@@ -1,4 +1,4 @@
-let juegos = {} // FIX: Objeto por chat, no null global
+let juegos = {} // Objeto por chat
 
 let handler = async (m, { conn, command }) => {
     let chat = m.chat
@@ -9,7 +9,7 @@ let handler = async (m, { conn, command }) => {
         if (members.length < 2) return m.reply('❌ Faltan 2 personas mínimo')
         let p1 = members[Math.floor(Math.random() * members.length)]
         let p2 = members.filter(v => v!== p1)[0]
-        juegos = { p1, p2, turno: p1 } // FIX: juegos
+        juegos = { p1, p2, turno: p1 } // FIX: Guardamos en juegos
         return conn.sendMessage(chat, { text: `🔥 *JUGUEMOS AL QUE SE SIENTE* 🔥\n\n@${p1.split('@')[0]} vs @${p2.split('@')[0]}\n\n👉 Turno: @${p1.split('@')[0]}\nEtiqueta a @${p2.split('@')[0]}`, mentions: [p1, p2] })
     }
 
@@ -17,13 +17,12 @@ let handler = async (m, { conn, command }) => {
         if (!juegos) return m.reply('No hay juego') // FIX
         let p1 = juegos.p1
         let p2 = juegos.p2
-        delete juegos // FIX: delete en vez de null
+        delete juegos // FIX: Borramos juegos
         return conn.sendMessage(chat, { text: `🛑 *JUEGO TERMINADO*\n@${p1.split('@')[0]} y @${p2.split('@')[0]} pararon 😅`, mentions: [p1, p2] })
     }
 
-    if (!juegos) return // FIX
-    let juego = juegos // FIX: lo meto en una var local para no repetir
-
+    let juego = juegos // FIX: Sacamos el juego de este chat
+    if (!juego) return
     if (m.sender!== juego.turno) return m.reply('❌ No es tu turno oe')
 
     try {
@@ -33,6 +32,7 @@ let handler = async (m, { conn, command }) => {
         if (!mencionado || mencionado!== otro) return m.reply(`❌ Etiqueta bien a @${otro.split('@')[0]} pe`, null, { mentions: })
 
         juego.turno = otro
+        juegos = juego // FIX: Actualizamos
         await m.react('😏')
 
         return conn.sendMessage(chat, { text: `👉 Ahora te toca @${otro.split('@')[0]}\nEtiqueta a @${juego.turno === juego.p1? juego.p2 : juego.p1}`, mentions: [otro, juego.turno === juego.p1? juego.p2 : juego.p1] })
