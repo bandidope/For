@@ -1,55 +1,60 @@
 let handler = async (m, { conn, command }) => {
     let who = m.mentionedJid[0] || m.sender
-    let name = conn.getName(who) || who.split('@')[0]
+    let name = m.pushName || who.split('@')[0]
+    if (m.mentionedJid[0]) {
+        let contact = await conn.onWhatsApp(who)[0]
+        name = m.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0]?
+               m.text.split('@')[1] : name
+    }
 
     switch(command) {
 
         case 'violar': {
             if (!m.mentionedJid[0]) return m.reply('Menciona a quien 😈\n.violar @tag')
-            let name2 = conn.getName(m.mentionedJid[0]) || m.mentionedJid[0].split('@')[0]
+            let name2 = m.text.split('@')[1] || m.mentionedJid[0].split('@')[0]
             let lugares = ['en el baño', 'en la cocina', 'en el parque', 'en el cuarto', 'en el carro', 'en la ducha']
             let lugar = lugares[Math.floor(Math.random() * lugares.length)]
-            m.reply(`😈 ${name} violó a ${name2} ${lugar}`, null, { mentions: [m.sender, who] })
+            m.reply(`😈 ${name} violó a @${name2} ${lugar}`, null, { mentions: [m.sender, who] })
         }
         break
 
         case 'follar': {
             if (!m.mentionedJid[0]) return m.reply('Menciona a alguien 😏\n.follar @tag')
             if (who == m.sender) return m.reply('Automamada no cuenta')
-            let name2 = conn.getName(m.mentionedJid[0]) || m.mentionedJid[0].split('@')[0]
+            let name2 = m.text.split('@')[1] || m.mentionedJid[0].split('@')[0]
             let pos = ['perrito', 'misionero', 'vaquera', '69', 'de ladito', 'contra la pared']
             let posicion = pos[Math.floor(Math.random() * pos.length)]
-            m.reply(`🔥 ${name} se está follando a ${name2} en posición *${posicion}* 🔥`, null, { mentions: [m.sender, who] })
+            m.reply(`🔥 ${name} se está follando a @${name2} en posición *${posicion}* 🔥`, null, { mentions: [m.sender, who] })
         }
         break
 
         case 'nalgada': {
             if (!m.mentionedJid[0]) return m.reply('Menciona a quien nalguear 🍑\n.nalgada @tag')
-            let name2 = conn.getName(m.mentionedJid[0]) || m.mentionedJid[0].split('@')[0]
-            m.reply(`👋 *PAM!* ${name} le dio una nalgada a ${name2}`, null, { mentions: [m.sender, who] })
+            let name2 = m.text.split('@')[1] || m.mentionedJid[0].split('@')[0]
+            m.reply(`👋 *PAM!* ${name} le dio una nalgada a @${name2}`, null, { mentions: [m.sender, who] })
         }
         break
 
         case 'lamer': {
             if (!m.mentionedJid[0]) return m.reply('Menciona a quien lamer 👅\n.lamer @tag')
-            let name2 = conn.getName(m.mentionedJid[0]) || m.mentionedJid[0].split('@')[0]
+            let name2 = m.text.split('@')[1] || m.mentionedJid[0].split('@')[0]
             let partes = ['el cuello', 'las orejas', 'la panza', 'los pies', 'todo el cuerpo']
             let parte = partes[Math.floor(Math.random() * partes.length)]
-            m.reply(`👅 ${name} le está lamiendo ${parte} a ${name2}`, null, { mentions: [m.sender, who] })
+            m.reply(`👅 ${name} le está lamiendo ${parte} a @${name2}`, null, { mentions: [m.sender, who] })
         }
         break
 
         case 'chupar': {
             if (!m.mentionedJid[0]) return m.reply('Menciona a quien 😏\n.chupar @tag')
-            let name2 = conn.getName(m.mentionedJid[0]) || m.mentionedJid[0].split('@')[0]
-            m.reply(`😏 ${name} le está chupando a ${name2}`, null, { mentions: [m.sender, who] })
+            let name2 = m.text.split('@')[1] || m.mentionedJid[0].split('@')[0]
+            m.reply(`😏 ${name} le está chupando a @${name2}`, null, { mentions: [m.sender, who] })
         }
         break
 
         case 'mamar': {
             if (!m.mentionedJid[0]) return m.reply('Menciona a quien 😈\n.mamar @tag')
-            let name2 = conn.getName(m.mentionedJid[0]) || m.mentionedJid[0].split('@')[0]
-            m.reply(`🤤 ${name} le está mamando a ${name2}`, null, { mentions: [m.sender, who] })
+            let name2 = m.text.split('@')[1] || m.mentionedJid[0].split('@')[0]
+            m.reply(`🤤 ${name} le está mamando a @${name2}`, null, { mentions: [m.sender, who] })
         }
         break
 
