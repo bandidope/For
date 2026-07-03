@@ -1,5 +1,5 @@
 {
-  "name": "Didier",
+  "name": "Barboza",
   "version": "2.2.0",
   "description": "Super WhatsApp Bot Multi Device",
   "main": "index.js",
@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/meldexzz/bolibotmensual.git",
   "author": {
-    "name": "Didier"
+    "name": "meldexzz"
   },
   "repository": {
     "type": "git",
@@ -45,6 +45,7 @@
     "awesome-phonenumber": "^3.4.0",
     "axios": "^1.1.2",
     "boxen": "^7.1.1",
+    "yt-dlp-wrap": "^2.3.12",
     "cfonts": "^3.3.0",
     "cors": "^2.8.5",
     "chalk": "^5.1.0",
