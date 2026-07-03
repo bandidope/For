@@ -28,7 +28,7 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
 .lista reset
 .lista reset extra`)
 
-  // 4. VER LISTA
+  // 4. VER LISTA - CON FOTO DEL GRUPO
   if (op === 'ver') {
     let texto = `📋 *LISTA SEMANAL*\n\n`
     for (let d of ['lunes','martes','miercoles','jueves','viernes','sabado','extra']) {
@@ -42,7 +42,16 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
       }
       texto += `\n`
     }
-    return m.reply(texto.trim())
+    texto = texto.trim()
+
+    // Intentar sacar la foto del grupo
+    try {
+      let pp = await conn.profilePictureUrl(chat, 'image')
+      return conn.sendFile(chat, pp, 'lista.jpg', texto, m)
+    } catch {
+      // Si el grupo no tiene foto, manda solo texto
+      return m.reply(texto)
+    }
   }
 
   // 5. RESET/BORRAR
@@ -78,6 +87,8 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
   }
 }
 
+handler.help = ['lista add Nombre | Numero | Premio', 'lista ver', 'lista reset']
+handler.tags = ['sorteos']
 handler.command = ['lista']
 handler.group = true
 handler.admin = true
