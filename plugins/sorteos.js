@@ -1,48 +1,55 @@
-// RULETA ULTRA SIMPLE - FOR THREE
-const lista = new Map() // Guarda la lista por grupo
+// RULETA v3.0 CASINO - FOR THREE 
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 
 let handler = async (m, { conn, args, command, isAdmin }) => {
     if (!isAdmin) return m.reply('❌ Solo admins')
 
-    let chat = m.chat
-    if (!lista.has(chat)) lista.set(chat, [])
-    let db = lista.get(chat)
+    // DB Blindada
+    global.db.data.sorteos ||= {}
+    global.db.data.sorteos[m.chat] ||= []
+    let db = global.db.data.sorteos[m.chat]
 
     let texto = args.join(' ').trim()
+    let nombres = texto ? [...new Set(texto.match(/"([^"]+)"|(\S+)/g)?.map(v => v.replace(/"/g, '')) || [])] : []
 
-    if (command === 'addrl') {
-        if (!texto) return m.reply('Uso:.addrl Juan "Ana Lopez"')
-        let nombres = [...new Set(texto.match(/"([^"]+)"|(\S+)/g).map(v => v.replace(/"/g, '')))]
-        db.push(...nombres.filter(n =>!db.includes(n)))
-        return m.reply(`✅ Agregados: ${nombres.join(', ')}\nTotal: ${db.length}\n\n${db.map((v,i)=>`${i+1}. ${v}`).join('\n')}`)
-    }
+    switch (command) {
+        case 'addrl': {
+            if (!nombres.length) return m.reply('Uso:.addrl Juan "Ana Lopez"')
+            let agregados = nombres.filter(n =>!db.includes(n))
+            db.push(...agregados)
+            if (!agregados.length) return m.reply('⚠️ Todos ya estaban')
+            return m.reply(`✅ +${agregados.length} | Total: ${db.length}\n\n${db.map((v,i)=>`${i+1}. ${v}`).join('\n')}`)
+        }
+        case 'listrl': {
+            if (!db.length) return m.reply('🧹 Vacío')
+            return m.reply(`🎡 *Participantes [${db.length}]*\n\n${db.map((v,i)=>`${i+1}. ${v}`).join('\n')}`)
+        }
+        case 'delrl': {
+            if (!nombres.length) return m.reply('Uso:.delrl Juan Ana')
+            let antes = db.length
+            db = db.filter(v =>!nombres.some(n => n.toLowerCase() === v.toLowerCase()))
+            if (db.length === antes) return m.reply('⚠️ Ninguno estaba')
+            return m.reply(`🗑️ -${antes - db.length} | Restantes: ${db.length}`)
+        }
+        case 'spinrl': {
+            if (db.length < 2) return m.reply('❌ Mínimo 2')
 
-    if (command === 'listrl') {
-        if (db.length === 0) return m.reply('🧹 Vacío')
-        return m.reply(`🎡 Participantes:\n\n${db.map((v,i)=>`${i+1}. ${v}`).join('\n')}`)
-    }
-
-    if (command === 'delrl') {
-        if (!texto) return m.reply('Uso:.delrl Juan')
-        let antes = db.length
-        db = db.filter(v => v.toLowerCase()!== texto.toLowerCase())
-        lista.set(chat, db)
-        if (db.length === antes) return m.reply('⚠️ No estaba')
-        return m.reply(`🗑️ Quitado: ${texto}\nRestantes: ${db.length}`)
-    }
-
-    if (command === 'spinrl') {
-        if (db.length < 2) return m.reply('❌ Mínimo 2')
-        await m.reply('🎡 Girando...')
-        await new Promise(r => setTimeout(r, 2000))
-        let ganador = db.splice(Math.floor(Math.random() * db.length), 1)[0]
-        lista.set(chat, db)
-        return m.reply(`🏆 GANADOR: *${ganador}*\nRestantes: ${db.length}`)
-    }
-
-    if (command === 'clearrl') {
-        lista.set(chat, [])
-        return m.reply('🧹 Borrado')
+            // ANIMACIÓN PRO CASINO
+            let msg = await conn.sendMessage(m.chat, { text: `🎡 *GIRANDO LA RULETA...*` }, { quoted: m })
+            let frames = 15 // Cuántas vueltas da
+            for (let i = 0; i < frames; i++) {
+                let shuffle = [...db].sort(() => 0.5 - Math.random()).slice(0, 5).join(' | ')
+                await conn.editMessage(m.chat, msg.key, { text: `🎡 *GIRANDO...*\n\n${shuffle}` })
+                await delay(120 + i * 15) // Se va frenando poco a poco
+            }
+            
+            let ganador = db[Math.floor(Math.random() * db.length)] // No se borra
+            return await conn.editMessage(m.chat, msg.key, { text: `🎯 *SE DETUVO*\n\n🏆 *GANADOR: ${ganador}*\n\nTotal: ${db.length}` })
+        }
+        case 'clearrl': {
+            db.splice(0, db.length)
+            return m.reply('🧹 Lista borrada')
+        }
     }
 }
 
