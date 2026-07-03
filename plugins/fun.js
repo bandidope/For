@@ -48,6 +48,6 @@ if (command == 'insulta') {
 
 }
 handler.help = ['vibra','frase','suerte','coquetea','insulta']
-handler.tags = ['for-three']
+handler.tags = ['Fun']
 handler.command = ['vibra','frase','suerte','coquetea','insulta']
 export default handler
