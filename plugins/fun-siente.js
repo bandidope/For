@@ -1,8 +1,8 @@
-let salas = {} // 1 sala por grupo
+let salas = {} // Memoria. 1 sala por grupo
 
 let handler = async (m, { conn, command }) => {
     let chat = m.chat
-    salas ||= {}
+    if (!salas) salas = {} // FIX: Así sí se crea bien
 
     // 1..TERMINAR - Cancela lobby o juego
     if (command === 'terminar') {
@@ -10,14 +10,14 @@ let handler = async (m, { conn, command }) => {
             delete salas
             return m.reply('🛑 *Sala eliminada*. Nadie más se siente 😅')
         }
-        return
+        return m.reply('No hay sala activa oe')
     }
 
     // 2..SIENTE - CREAR LOBBY
     if (command === 'siente') {
-        if (salas) return m.reply('❌ Ya hay una sala activa. Usa.sala pa' + ' ver o.terminar pa' + ' borrar')
-        salas = { inscritos: [], estado: 'lobby' } // lobby = esperando gente
-        return m.reply(`🔥 *LOBBY: JUGUEMOS AL QUE SE SIENTE* 🔥\n\nAnótense con:.anotar\nMínimo 2 personas.\nCuando estén listos el admin pone:.empezar\n\n.sala = Ver inscritos`)
+        if (salas) return m.reply('❌ Ya hay una sala activa. Usa.sala pa ver o.terminar pa borrar')
+        salas = { inscritos: [], estado: 'lobby' }
+        return m.reply(`🔥 *LOBBY: JUGUEMOS AL QUE SE SIENTE* 🔥\n\nAnótense con:.anotar\nMínimo 2 personas.\nCuando estén listos el admin pone:.empezar\n.sala = Ver inscritos`)
     }
 
     // 3..ANOTAR - Apuntarse
@@ -43,7 +43,7 @@ let handler = async (m, { conn, command }) => {
         let p1 = salas.inscritos[Math.floor(Math.random() * salas.inscritos.length)]
         let p2 = salas.inscritos.filter(v => v!== p1)[Math.floor(Math.random() * (salas.inscritos.length - 1))]
 
-        salas = { p1, p2, turno: p1, estado: 'jugando', inscritos: salas.inscritos } // Guardamos inscritos por si acaso
+        salas = { p1, p2, turno: p1, estado: 'jugando', inscritos: salas.inscritos }
 
         return conn.sendMessage(chat, { text: `🎮 *EMPEZÓ EL JUEGO* 🎮\n\n@${p1.split('@')[0]} vs @${p2.split('@')[0]}\n\n👉 Empieza @${p1.split('@')[0]}\nResponde a este mensaje etiquetando a @${p2.split('@')[0]}\n\nTip: Pongan.terminar pa' acabar`, mentions: [p1, p2] })
     }
@@ -57,7 +57,7 @@ let handler = async (m, { conn, command }) => {
     let mencionado = m.mentionedJid[0]
     let otro = game.turno === game.p1? game.p2 : game.p1
 
-    if (mencionado!== otro) return conn.sendMessage(chat, { text: `❌ Etiqueta a @${otro.split('@')[0]} pe`, mentions: })
+    if (mencionado!== otro) return conn.sendMessage(chat, { text: `❌ Etiqueta a @${otro.split('@')[0]} pe`, mentions: [] })
 
     game.turno = otro
     await m.react('😏')
@@ -65,7 +65,7 @@ let handler = async (m, { conn, command }) => {
     return conn.sendMessage(chat, { text: `👉 Te toca @${otro.split('@')[0]}\nResponde a este mensaje etiquetando a @${game.turno === game.p1? game.p2 : game.p1}`, mentions: [otro, game.turno === game.p1? game.p2 : game.p1] })
 }
 
-handler.help = ['siente']
+handler.help = ['siente', 'anotar', 'sala', 'empezar', 'terminar']
 handler.tags = ['fun']
 handler.command = ['siente', 'anotar', 'sala', 'empezar', 'terminar']
 handler.group = true
