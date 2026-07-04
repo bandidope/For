@@ -1,6 +1,6 @@
 let handler = async (m, { conn }) => {
     // PEGA TUS URLS AQUÍ
-        let listaVideos = [
+let listaVideos = [
         'https://files.evogb.win/enz3dO.mp4',
         'https://files.evogb.win/hbkzO5.mp4',
         'https://files.evogb.win/EGI45I.mp4',
@@ -17,12 +17,13 @@ let handler = async (m, { conn }) => {
 
     let i = global.db.data.users[m.sender].videoIndex || 0
 
-    if (i >= listaVideos.length) i = 0 // reinicia cuando acaba
+    if (i >= listaVideos.length) i = 0 // reinicia
 
-    await conn.sendVideo(m.chat, listaVideos[i],
-        `*Video ${i + 1} de ${listaVideos.length}*\n\nEscribe *.videos* para ver el siguiente ▶️`,
-        m
-    )
+    await conn.sendMessage(m.chat, {
+        video: { url: listaVideos[i] },
+        caption: `*Video ${i + 1} de ${listaVideos.length}*\n\nEscribe *.videos* para ver el siguiente ▶️`,
+        mimetype: 'video/mp4'
+    }, { quoted: m })
 
     global.db.data.users[m.sender].videoIndex = i + 1
 }
