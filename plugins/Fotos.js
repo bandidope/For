@@ -32,7 +32,7 @@ let handler = async (m, { conn }) => {
     global.db.data.users[m.sender].fotoIndex = i + 1
 }
 
-handler.help = ['Fotos > Chicas']
+handler.help = ['Fotos ( Chicas )']
 handler.tags = ['+18']
 handler.command = /^(Fotos)$/i
 
