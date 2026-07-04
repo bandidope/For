@@ -1,20 +1,19 @@
+FROM node:18-bullseye
 
-FROM node:lts-buster
+# Instalar dependencias que usa Chivo Mine
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    imagemagick \
+    webp \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && \
-  apt-get install -y \
-  ffmpeg \
-  imagemagick \
-  webp && \
-  apt-get upgrade -y && \
-  rm -rf /var/lib/apt/lists/*
+WORKDIR /app
 
-COPY package.json .
+COPY package*.json ./
+RUN npm install
 
-RUN npm install && npm install qrcode-terminal
+COPY .
 
-COPY . .
+EXPOSE 3000
 
-EXPOSE 5000
-
-CMD ["node", "index.js", "--server"]
+CMD ["npm", "start"]
