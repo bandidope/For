@@ -524,9 +524,9 @@ app.post('/join', async (req, res) => {
 });
 // ===== FIN RUTA =====
 
-const PORT2 = 3032;
+const PORT2 = 25612;
 
 app.listen(PORT2, '0.0.0.0', () => {
     console.log(chalk.greenBright(`\n✅ API WEB: Servidor activo en puerto ${PORT2}`));
-    console.log(chalk.cyanBright(`✅ RUTA PANEL: http://TU-IP:3032/join`));
+    console.log(chalk.cyanBright(`✅ RUTA PANEL: http://TU-IP:25612/join`));
 });
