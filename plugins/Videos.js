@@ -10,24 +10,19 @@ let handler = async (m, { conn }) => {
         'https://files.evogb.win/M3wCig.mp4'
     ]
 
-    // Inicializar DB si no existe
+    // Inicializar DB
     global.db.data = global.db.data || {}
     global.db.data.users = global.db.data.users || {}
     global.db.data.users[m.sender] = global.db.data.users[m.sender] || {}
 
     let i = global.db.data.users[m.sender].videoIndex || 0
 
-    if (i >= listaVideos.length) i = 0 // reinicia
+    if (i >= listaVideos.length) i = 0 // reinicia cuando acaba
 
-    await conn.sendMessage(m.chat, {
-        video: { url: listaVideos[i] },
-        caption: `*Video ${i + 1} de ${listaVideos.length}*`,
-        footer: 'Toca el botón para el siguiente',
-        buttons: [
-            { buttonId: '.videos', buttonText: { displayText: 'Siguiente ▶️' }, type: 1 }
-        ],
-        headerType: 4
-    }, { quoted: m })
+    await conn.sendVideo(m.chat, listaVideos[i],
+        `*Video ${i + 1} de ${listaVideos.length}*\n\nEscribe *.videos* para ver el siguiente ▶️`,
+        m
+    )
 
     global.db.data.users[m.sender].videoIndex = i + 1
 }
