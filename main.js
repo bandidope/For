@@ -78,7 +78,7 @@ global.loadDatabase = async function loadDatabase() {
     msgs: {},
     sticker: {},
     settings: {},
-   ...(global.db.data || {}),
+  ...(global.db.data || {}),
   };
   global.db.chain = chain(global.db.data);
 };
@@ -101,11 +101,12 @@ global.loadChatgptDB = async function loadChatgptDB() {
   global.chatgpt.READ = null;
   global.chatgpt.data = {
     users: {},
-   ...(global.chatgpt.data || {}),
+  ...(global.chatgpt.data || {}),
   };
   global.chatgpt.chain = lodash.chain(global.chatgpt.data);
 };
 loadChatgptDB();
+
 
 global.authFile = global.Sesion
 const {state, saveState, saveCreds} = await useMultiFileAuthState(global.authFile)
@@ -297,6 +298,7 @@ process.on('uncaughtException', console.error);
 
 let isInit = true;
 
+
 let handler = await import('./handler.js');
 global.reloadHandler = async function(restatConn) {
 
@@ -326,6 +328,7 @@ global.reloadHandler = async function(restatConn) {
     conn.ev.off('creds.update', conn.credsUpdate);
   }
 
+
   conn.welcome = '*👋 Hola @user*\n\n *W E L C O M E*\n⫹⫺ Grupo: @group\n⫹⫺ *Descripción:*\n@desc'
   conn.bye = '👋 Byee @user\n *G O D B Y E*'
   conn.spromote = '*[ ℹ️ ] @user Fue promovido a administrador.*';
@@ -354,7 +357,7 @@ global.reloadHandler = async function(restatConn) {
   return true;
 };
 
-const pluginFolder = global.__dirname(join(__dirname, './plugins/index'));
+const pluginFolder = global.__dirname(join(__dirname, './plugins'));
 const pluginFilter = (filename) => /\.js$/.test(filename);
 global.plugins = {};
 async function filesInit() {
@@ -470,7 +473,7 @@ setInterval(() => {
 }
 }, 1000 * 60 * 60 * 2); // 2 horas
 
-// ============ API PARA F3B WEB ============
+// ============ API PARA F3B WEB - ADAPTADA A TUS PLUGINS SUELTOS ============
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -515,27 +518,45 @@ app.get('/api/get-pairing-code', async (req, res) => {
     }
 });
 
-// NUEVO: Endpoint para que la web lea los plugins
+// NUEVO: Endpoint para que la web lea los plugins SUELTOS
 app.get('/api/comandos', (req,res) => {
     let data = {};
     const rutaPlugins = path.join(__dirname, 'plugins');
 
     try {
-        const categorias = fs.readdirSync(rutaPlugins);
+        const archivos = fs.readdirSync(rutaPlugins);
 
-        categorias.forEach(cat => {
-            const rutaCat = path.join(rutaPlugins, cat);
-            if(fs.statSync(rutaCat).isDirectory()){
-                const comandos = fs.readdirSync(rutaCat)
-               .filter(file => file.endsWith('.js'))
-               .map(file => '.' + file.replace('.js',''));
-
-                if(comandos.length > 0){
-                    data[cat.toUpperCase()] = comandos.sort();
+        archivos.forEach(file => {
+            if(file.endsWith('.js')){
+                let nombre = '.' + file.replace('.js','');
+                
+                // Auto-organizar por nombre
+                if(file.startsWith('busquedas-')){
+                    if(!data["BUSQUEDAS"]) data["BUSQUEDAS"] = [];
+                    data["BUSQUEDAS"].push(nombre);
+                }
+                else if(file.startsWith('descarga-') || file.startsWith('descargas-')){
+                    if(!data["DESCARGAS"]) data["DESCARGAS"] = [];
+                    data["DESCARGAS"].push(nombre);
+                }
+                else if(file.startsWith('_anti') || file.startsWith('_modo')){
+                    if(!data["ADMIN"]) data["ADMIN"] = [];
+                    data["ADMIN"].push(nombre);
+                }
+                else if(file.startsWith('_')){
+                    if(!data["SISTEMA"]) data["SISTEMA"] = [];
+                    data["SISTEMA"].push(nombre);
+                }
+                else {
+                    if(!data["GENERAL"]) data["GENERAL"] = [];
+                    data["GENERAL"].push(nombre);
                 }
             }
         });
-
+        
+        // Ordenar A-Z
+        for(let cat in data){ data[cat].sort(); }
+        
         res.json(data);
     } catch(err){
         res.status(500).json({error: "No se pudo leer carpeta plugins"});
@@ -545,5 +566,5 @@ app.get('/api/comandos', (req,res) => {
 // USAR SOLO 1 PUERTO PARA RAILWAY
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(chalk.greenBright(`\n✅ F3B API + BOT: Servidor activo en puerto ${PORT}`));
+    console.log(chalk.greenBright(`\n✅ CHIVO MINE API + BOT: Servidor activo en puerto ${PORT}`));
 });
