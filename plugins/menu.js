@@ -26,6 +26,7 @@ let handler = async (m, { conn, usedPrefix }) => {
   let menuTxt = `*🤖 [ FOR THREE BOT ]* 🤖\n\n`
   menuTxt += `👤 Usuario: ${taguser}\n⚙️ Prefijo: [ ${usedPrefix} ]\n`
   menuTxt += `📦 Total: ${plugins.length} | 📂 Cats: ${categories.length}\n\n`
+  menuTxt += `🌀 Url Comprar : https://bandidope.github.io/For-Three-Bot`
   menuTxt += `━━━━━━━━━━━\n\n`
   
   for (let tag of categories) {
