@@ -79,7 +79,7 @@ global.loadDatabase = async function loadDatabase() {
     msgs: {},
     sticker: {},
     settings: {},
-   ...(global.db.data || {}),
+  ...(global.db.data || {}),
   };
   global.db.chain = chain(global.db.data);
 };
@@ -102,7 +102,7 @@ global.loadChatgptDB = async function loadChatgptDB() {
   global.chatgpt.READ = null;
   global.chatgpt.data = {
     users: {},
-   ...(global.chatgpt.data || {}),
+  ...(global.chatgpt.data || {}),
   };
   global.chatgpt.chain = lodash.chain(global.chatgpt.data);
 };
@@ -464,9 +464,11 @@ function clockString(ms) {
   return [d, 'd ️', h, 'h ', m, 'm ', s, 's '].map((v) => v.toString().padStart(2, 0)).join('');
 }
 
+// ===== SERVIDOR WEB PARA EL PANEL =====
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.post('/api/get-pairing-code', async (req, res) => {
     let { phoneNumber } = req.body;
@@ -507,15 +509,24 @@ app.get('/api/get-pairing-code', async (req, res) => {
     }
 });
 
-// ===== RUTA PARA EL PANEL =====
+// ===== RUTA PARA EL PANEL - ARREGLADA =====
 app.post('/join', async (req, res) => {
   let { link, dias } = req.body
   console.log(chalk.green(`[PANEL] Nuevo pedido: ${link} - ${dias} dias`))
 
+  if(!link) return res.status(400).json({msg: "❌ Error: Link inválido"})
+
   try {
-    let code = link.split('/').pop() // saca el código del link
+    let code = link.split('https://chat.whatsapp.com/')[1]
     if(!code) throw new Error('Link inválido')
+
     await global.conn.groupAcceptInvite(code)
+
+    let idGrupo = code + '@g.us'
+    await global.conn.sendMessage(idGrupo, {
+      text: `✅ *For-Bot activado*\n⏰ Estaré aquí por ${dias} días\n📩 Enviado desde el panel web`
+    })
+
     res.status(200).json({msg: `✅ Bot unido al grupo por ${dias} días`})
   } catch(e) {
     console.log(chalk.red(e))
