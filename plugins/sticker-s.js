@@ -1,5 +1,7 @@
-import { sticker } from '../lib/sticker.js' // Tu librería de respaldo
 import { Sticker, StickerTypes } from 'wa-sticker-formatter'
+import { sticker } from '../lib/sticker.js'
+import { toBuffer } from 'wa-sticker-formatter'
+import sharp from 'sharp' // Para convertir webp a png
 
 let handler = async (m, { conn, usedPrefix, command, args }) => {
     let q = m.quoted? m.quoted : m
@@ -19,36 +21,20 @@ let handler = async (m, { conn, usedPrefix, command, args }) => {
             let img
             try {
                 img = await q.download()
-                if (!img) return m.reply('❌ Error al descargar')
             } catch {
-                return m.reply('❌ No se pudo descargar')
+                return m.reply('❌ Error al descargar')
             }
 
             let type = args[0] === 'circle' || args[0] === 'c'? StickerTypes.CIRCLE : StickerTypes.FULL
-
-            // INTENTAR CON WA-STICKER-FORMATTER
             try {
-                let stiker = new Sticker(img, {
-                    pack: defaultPack,
-                    author: defaultAuthor,
-                    type: type,
-                    quality: 50,
-                    background: '#00000'
-                })
+                let stiker = new Sticker(img, { pack: defaultPack, author: defaultAuthor, type: type, quality: 50 })
                 let buffer = await stiker.toBuffer()
-                return await conn.sendFile(m.chat, buffer, 'sticker.webp', '', m, true)
-            } catch (e1) {
-                console.log('Fallo wa-sticker-formatter, usando fallback:', e1)
-
-                // FALLBACK CON TU LIB/STICKER.JS
-                try {
-                    let stiker = await sticker(img, false, defaultPack, defaultAuthor)
-                    return await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true)
-                } catch (e2) {
-                    console.error(e2)
-                    return m.reply(`❌ Error al crear sticker\n*Posibles causas:*\n1. La imagen es muy pesada\n2. No tienes ffmpeg instalado\n3. El video > 10s`)
-                }
+                await conn.sendFile(m.chat, buffer, 'sticker.webp', '', m, true)
+            } catch {
+                let stiker = await sticker(img, false, defaultPack, defaultAuthor)
+                await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true)
             }
+            break
         }
 
         case 'toimg': case 'img': {
@@ -57,10 +43,12 @@ let handler = async (m, { conn, usedPrefix, command, args }) => {
 
             try {
                 let media = await m.quoted.download()
-                await conn.sendFile(m.chat, media, 'imagen.png', '✅ *Sticker convertido a imagen*', m)
+                // CONVERTIR WEBP A PNG CON SHARP
+                let pngBuffer = await sharp(media).png().toBuffer()
+                await conn.sendFile(m.chat, pngBuffer, 'sticker.png', '✅ *Sticker convertido a imagen*', m)
             } catch (e) {
                 console.error(e)
-                m.reply('❌ Error al convertir')
+                m.reply('❌ Error al convertir. Instala: npm i sharp')
             }
             break
         }
@@ -71,25 +59,14 @@ let handler = async (m, { conn, usedPrefix, command, args }) => {
 
             let pack = args[0] || defaultPack
             let author = args[1] || defaultAuthor
-
             try {
                 let media = await m.quoted.download()
-                let stiker = new Sticker(media, {
-                    pack: pack,
-                    author: author,
-                    type: StickerTypes.FULL,
-                    quality: 50
-                })
+                let stiker = new Sticker(media, { pack: pack, author: author, type: StickerTypes.FULL, quality: 50 })
                 let buffer = await stiker.toBuffer()
                 await conn.sendFile(m.chat, buffer, 'sticker.webp', '', m, true)
-            } catch (e) {
-                // Fallback si falla
-                try {
-                    let stiker = await sticker(media, false, pack, author)
-                    await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true)
-                } catch {
-                    m.reply('❌ Error al cambiar marca de agua')
-                }
+            } catch {
+                let stiker = await sticker(media, false, pack, author)
+                await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true)
             }
             break
         }
