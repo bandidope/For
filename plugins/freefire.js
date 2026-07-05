@@ -63,4 +63,5 @@ let handler = async (m, { conn, command,...args }) => {
 handler.help = ['ff', 'nombref', 'arma', 'clan', 'bioff', 'kd']
 handler.tags = ['freefire']
 handler.command = ['ff', 'nombref', 'arma', 'clan', 'bioff', 'kd']
+handler.group = true
 export default handler
