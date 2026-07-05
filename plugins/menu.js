@@ -1,51 +1,86 @@
+let menuCache = { txt: '', time: 0 } // Cache para que no laggee
+
 let handler = async (m, { conn, usedPrefix }) => {
   let taguser = '@' + m.sender.split('@')[0]
   const imgUrl = 'https://files.evogb.win/7Rs2Rz.jpg'
+  const now = Date.now()
 
-  let plugins = Object.values(global.plugins).filter(p =>!p.disabled && p.help)
-  let groups = {}
-  for (let p of plugins) {
-    for (let tag of p.tags || ['main']) {
-      if (!(tag in groups)) groups[tag] = []
-      groups[tag].push(...[].concat(p.help))
+  // Si el cache tiene menos de 10 min, lo reutilizamos
+  if (menuCache.txt && (now - menuCache.time) < 600000) {
+    return conn.sendMessage(m.chat, {
+      image: { url: imgUrl },
+      caption: menuCache.txt,
+      mentions: [m.sender]
+    }, { quoted: m })
+  }
+
+  try {
+    let plugins = Object.values(global.plugins).filter(p =>!p.disabled && p.help)
+    let groups = {}
+    let totalCmds = 0
+
+    for (let p of plugins) {
+      let tags = p.tags || ['main']
+      let helps = [].concat(p.help).filter(Boolean) // Evita null/undefined
+      totalCmds += helps.length
+
+      for (let tag of tags) {
+        if (!groups[tag]) groups[tag] = new Set() // Set evita duplicados
+        helps.forEach(cmd => groups[tag].add(cmd))
+      }
     }
-  }
-  
-  // Orden de categorías: VENTAS > SORTEOS > INFO > MAIN > El resto A-Z
-  let orden = ['ventas bot', 'sorteos', 'info', 'main']
-  let categories = Object.keys(groups)
-  categories.sort((a, b) => {
-    let ia = orden.indexOf(a.toLowerCase())
-    let ib = orden.indexOf(b.toLowerCase())
-    if (ia!== -1 && ib!== -1) return ia - ib // Los 2 están en el orden
-    if (ia!== -1) return -1 // Solo a está en el orden = va primero
-    if (ib!== -1) return 1 // Solo b está en el orden = va primero
-    return a.localeCompare(b) // El resto A-Z
-  })
 
-  let menuTxt = `*🤖 [ FOR THREE BOT ]* 🤖\n\n`
-  menuTxt += `👤 Usuario: ${taguser}\n⚙️ Prefijo: [ ${usedPrefix} ]\n`
-  menuTxt += `📦 Total: ${plugins.length} | 📂 Cats: ${categories.length}\n`
-  menuTxt += `🌀 Url Comprar : https://bandidope.github.io/For-Three-Bot\n\n`
-  menuTxt += `━━━━━━━━━━━\n\n`
-  
-  for (let tag of categories) {
-    menuTxt += `*🗂️ ${tag.toUpperCase()}* [${groups[tag].length}]\n`
-    menuTxt += groups[tag].map(v => `> 🌀 ${usedPrefix}${v}`).join('\n')
-    menuTxt += `\n\n━━━━━━━━━━━━━━━━━━━\n\n`
-  }
-  
-  menuTxt += `👑 *Creador:* ${usedPrefix}creador\n`
-  menuTxt += `> Sistema v3.1 🌀`
+    // Orden de categorías: VENTAS > SORTEOS > INFO > MAIN > El resto A-Z
+    let orden = ['ventas bot', 'sorteos', 'info', 'main']
+    let categories = Object.keys(groups)
+    categories.sort((a, b) => {
+      let ia = orden.indexOf(a.toLowerCase())
+      let ib = orden.indexOf(b.toLowerCase())
+      if (ia!== -1 && ib!== -1) return ia - ib
+      if (ia!== -1) return -1
+      if (ib!== -1) return 1
+      return a.localeCompare(b)
+    })
 
-  await conn.sendMessage(m.chat, {
-    image: { url: imgUrl },
-    caption: menuTxt,
-    mentions: [m.sender]
-  }, { quoted: m })
+    let uptime = process.uptime()
+    let h = Math.floor(uptime / 3600)
+    let m_ = Math.floor(uptime % 3600 / 60)
+
+    let menuTxt = `*🤖 [ FOR THREE BOT v3.2 ]* 🤖\n\n`
+    menuTxt += `👤 Usuario: ${taguser}\n`
+    menuTxt += `⚙️ Prefijo: [ ${usedPrefix} ]\n`
+    menuTxt += `⏱️ Activo: ${h}h ${m_}m\n`
+    menuTxt += `📦 Comandos: ${totalCmds} | 📂 Categorías: ${categories.length}\n`
+    menuTxt += `🛒 Comprar Bot: https://bandidope.github.io/For-Three-Bot\n`
+    menuTxt += `━━━━━━━━━━━\n\n`
+
+    for (let tag of categories) {
+      let cmds = [...groups[tag]].sort() // Ordena A-Z dentro de cada categoría
+      menuTxt += `*🗂️ ${tag.toUpperCase()}* [${cmds.length}]\n`
+      menuTxt += cmds.map(v => `> 🌀 ${usedPrefix}${v}`).join('\n')
+      menuTxt += `\n\n━━━━━━━━━━━\n\n`
+    }
+
+    menuTxt += `👑 *Creador:* ${usedPrefix}creador\n`
+    menuTxt += `> Sistema v3.2 🌀 | ${new Date().toLocaleDateString('es-PE')}`
+
+    // Guardar en cache
+    menuCache = { txt: menuTxt, time: now }
+
+    await conn.sendMessage(m.chat, {
+      image: { url: imgUrl },
+      caption: menuTxt,
+      mentions: [m.sender]
+    }, { quoted: m })
+
+  } catch (e) {
+    console.error(e)
+    m.reply(`❌ Error al generar el menú: ${e.message}`)
+  }
 }
 
 handler.help = ['menu']
 handler.tags = ['main']
 handler.command = /^(menu|help|menú)$/i
+handler.limit = false // Quita limite si tenías
 export default handler
