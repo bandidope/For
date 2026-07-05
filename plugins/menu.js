@@ -5,8 +5,8 @@ let handler = async (m, { conn, usedPrefix }) => {
   const imgUrl = 'https://files.evogb.win/7Rs2Rz.jpg'
   const now = Date.now()
 
-  // Si el cache tiene menos de 10 min, lo reutilizamos
-  if (menuCache.txt && (now - menuCache.time) < 600000) {
+  // Si el cache tiene menos de 2 min, lo reutilizamos. Antes era 10min
+  if (menuCache.txt && (now - menuCache.time) < 120000) {
     return conn.sendMessage(m.chat, {
       image: { url: imgUrl },
       caption: menuCache.txt,
@@ -30,8 +30,8 @@ let handler = async (m, { conn, usedPrefix }) => {
       }
     }
 
-    // Orden de categorías: VENTAS > SORTEOS > INFO > MAIN > El resto A-Z
-    let orden = ['ventas bot', 'sorteos', 'info', 'main']
+    // Orden de categorías: VENTAS > SORTEOS > INFO > MAIN > FUN > El resto A-Z
+    let orden = ['ventas bot', 'sorteos', 'info', 'main', 'fun']
     let categories = Object.keys(groups)
     categories.sort((a, b) => {
       let ia = orden.indexOf(a.toLowerCase())
@@ -56,7 +56,8 @@ let handler = async (m, { conn, usedPrefix }) => {
 
     for (let tag of categories) {
       let cmds = [...groups[tag]].sort() // Ordena A-Z dentro de cada categoría
-      menuTxt += `*🗂️ ${tag.toUpperCase()}* [${cmds.length}]\n`
+      let tagName = tag === 'fun'? '🎮 JUEGOS Y DIVERSIÓN' : tag.toUpperCase() // Nombre bonito para fun
+      menuTxt += `*🗂️ ${tagName}* [${cmds.length}]\n`
       menuTxt += cmds.map(v => `> 🌀 ${usedPrefix}${v}`).join('\n')
       menuTxt += `\n\n━━━━━━━━━━━\n\n`
     }
@@ -82,5 +83,5 @@ let handler = async (m, { conn, usedPrefix }) => {
 handler.help = ['menu']
 handler.tags = ['main']
 handler.command = /^(menu|help|menú)$/i
-handler.limit = false // Quita limite si tenías
+handler.limit = false
 export default handler
