@@ -1,16 +1,7 @@
-import axios from 'axios'
-
-// 1. INFO DE PERFIL FF - Busca por ID
+// 1. INFO DE PERFIL FF - MODO MANUAL
 let ff = async (m, { conn, text, usedPrefix, command }) => {
-    if (!text) return m.reply(`*Ejemplo:* ${usedPrefix + command} 12345678\n*Nota:* Necesitas el ID de FF`)
-    try {
-        await m.react('🎮')
-        // API publica de FF
-        let { data } = await axios.get(`https://ff.garena.com/api/profile/${text}`)
-        m.reply(`*🎮 PERFIL FREE FIRE*\n\n*ID:* ${data.id}\n*Nick:* ${data.name}\n*Nivel:* ${data.level}\n*Rango:* ${data.rank}\n*Likes:* ${data.likes}\n*Región:* ${data.region}`)
-    } catch {
-        m.reply('❌ ID no encontrado o perfil privado')
-    }
+    if (!text) return m.reply(`*Ejemplo:* ${usedPrefix + command} 12345678\n*Pega tu ID de FF y te doy tips para subir de rango*`)
+    m.reply(`*🎮 BUSCANDO ID: ${text}*\n\n❌ No pude conectar con Garena\n*Pero te puedo ayudar con:*\n• .nombref - Generar nombre\n• .arma - Arma random\n• .kd kills muertes - Calcular K/D\n• .bioff - Frases para bio`)
 }
 
 // 2. GENERADOR DE NOMBRES FF
@@ -24,9 +15,9 @@ let nombref = async (m, { conn }) => {
 
 // 3. RUEDA DE ARMAS
 let arma = async (m, { conn }) => {
-    let armas = ['M1887', 'M82B', 'AWM', 'MP40', 'SCAR', 'AK47', 'GROZA', 'M4A1', 'UMP', 'P90']
+    let armas = ['M1887 💥', 'M82B 🎯', 'AWM 🔫', 'MP40 ⚡', 'SCAR 🔥', 'AK47 💀', 'GROZA 👑', 'M4A1 😈', 'UMP 💣', 'P90 🚀']
     let arma = armas[Math.floor(Math.random() * armas.length)]
-    m.reply(`🔫 *Tu arma es:* ${arma}\n\nUsala para rushear 😈`)
+    m.reply(`🔫 *Tu arma es:* ${arma}\n\nUsala para rushear`)
 }
 
 // 4. GENERADOR DE CLAN
@@ -34,7 +25,7 @@ let clan = async (m, { conn }) => {
     let tags = ['『FF』', '『YT』', '『PRO』', '『TEAM』', '『GOD』']
     let nombres = ['Destroyers', 'Legends', 'Killers', 'Ghosts', 'Titans', 'Warriors', 'Squad']
     let clan = `${tags[Math.floor(Math.random() * tags.length)]}${nombres[Math.floor(Math.random() * nombres.length)]}`
-    m.reply(`*Nombres para Clan:*\n\n1. ${clan}\n2. ${clan.replace('FF', 'YT')}\n3. ${clan.replace('『', '【').replace('』', '】')}`)
+    m.reply(`*Nombres para Clan:*\n\n1. ${clan}\n2. ${clan.replace('FF', 'YT')}\n3. ${clan.replace('『', '乂')}`)
 }
 
 // 5. FRASES PARA BIO
@@ -47,28 +38,17 @@ let bioff = async (m, { conn }) => {
         'Cabeza o nada 🎯',
         'Dios primero, Booyah después 🙏'
     ]
-    let bio = bios[Math.floor(Math.random() * bios.length)]
-    m.reply(`*Bios para FF:*\n\n${bio}\n\n${bios[Math.floor(Math.random() * bios.length)]}\n\n${bios[Math.floor(Math.random() * bios.length)]}`)
+    m.reply(`*Bios para FF:*\n\n${bios[0]}\n${bios[1]}\n${bios[2]}`)
 }
 
 // 6. CALCULAR K/D
 let kd = async (m, { conn, args }) => {
-    if (args.length < 2) return m.reply('*Ejemplo:* .kd kills muertes\n*Ejemplo:* .kd 500 100')
+    if (args.length < 2) return m.reply('*Ejemplo:* .kd 500 100')
     let kills = parseInt(args[0])
     let deaths = parseInt(args[1])
     let kd = (kills / deaths).toFixed(2)
     let nivel = kd > 3? 'Dios 😈' : kd > 2? 'Pro 🔥' : kd > 1? 'Bueno 👍' : 'Noob 😅'
     m.reply(`*📊 ESTADÍSTICAS*\n\n*Kills:* ${kills}\n*Muertes:* ${deaths}\n*K/D:* ${kd}\n*Nivel:* ${nivel}`)
-}
-
-// 7. EVENTO FF
-let evento = async (m, { conn }) => {
-    try {
-        let { data } = await axios.get('https://api.codetabs.com/v1/proxy?quest=https://ff.garena.com/api/events')
-        m.reply(`*🎁 EVENTOS ACTIVOS FF*\n\nRevisa en el juego la pestaña de Eventos\n*Tip:* Recoge diamantes gratis todos los días`)
-    } catch {
-        m.reply('Revisa los eventos en el juego bro. Los eventos cambian cada semana 🎁')
-    }
 }
 
 let handler = async (m, { conn, command,...args }) => {
@@ -78,10 +58,9 @@ let handler = async (m, { conn, command,...args }) => {
     if (command === 'clan') return clan(m, { conn,...args })
     if (command === 'bioff') return bioff(m, { conn,...args })
     if (command === 'kd') return kd(m, { conn,...args })
-    if (command === 'evento') return evento(m, { conn,...args })
 }
 
-handler.help = ['ff', 'nombref', 'arma', 'clan', 'bioff', 'kd', 'evento']
+handler.help = ['ff', 'nombref', 'arma', 'clan', 'bioff', 'kd']
 handler.tags = ['freefire']
-handler.command = ['ff', 'nombref', 'arma', 'clan', 'bioff', 'kd', 'evento']
+handler.command = ['ff', 'nombref', 'arma', 'clan', 'bioff', 'kd']
 export default handler
