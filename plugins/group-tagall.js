@@ -1,6 +1,6 @@
 const handler = async (m, { isOwner, isAdmin, conn, participants, args }) => {
   try {
-    if (!(isAdmin || isOwner)) {
+    if (!(isAdmin || isAdmin)) {
       global.dfail('admin', m, conn);
       return;
     }
@@ -9,6 +9,14 @@ const handler = async (m, { isOwner, isAdmin, conn, participants, args }) => {
     const groupMetadata = await conn.groupMetadata(m.chat).catch(() => ({ subject: 'Grupo', participants: [] }));
     const groupName = groupMetadata.subject;
 
+    // MEJORA 1: Foto del grupo. Si no tiene, usa tu logo
+    let groupImg;
+    try {
+      groupImg = await conn.profilePictureUrl(m.chat, 'image');
+    } catch {
+      groupImg = 'https://raw.githubusercontent.com/bandidope/Fotos/refs/heads/master/fotos/logo.png';
+    }
+
     // Lista de banderas por prefijo
     const countryFlags = [
       { prefijo: '502', bandera: '🇬🇹' }, { prefijo: '503', bandera: '🇸🇻' },
@@ -16,18 +24,18 @@ const handler = async (m, { isOwner, isAdmin, conn, participants, args }) => {
       { prefijo: '506', bandera: '🇨🇷' }, { prefijo: '507', bandera: '🇵🇦' },
       { prefijo: '591', bandera: '🇧🇴' }, { prefijo: '592', bandera: '🇬🇾' },
       { prefijo: '593', bandera: '🇪🇨' }, { prefijo: '595', bandera: '🇵🇾' },
-      { prefijo: '598', bandera: '🇺🇾' }, { prefijo: '58',  bandera: '🇻🇪' },
-      { prefijo: '52',  bandera: '🇲🇽' }, { prefijo: '54',  bandera: '🇦🇷' },
-      { prefijo: '57',  bandera: '🇨🇴' }, { prefijo: '51',  bandera: '🇵🇪' },
-      { prefijo: '56',  bandera: '🇨🇱' }, { prefijo: '55',  bandera: '🇧🇷' },
-      { prefijo: '34',  bandera: '🇪🇸' }, { prefijo: '44',  bandera: '🇬🇧' },
-      { prefijo: '33',  bandera: '🇫🇷' }, { prefijo: '49',  bandera: '🇩🇪' },
-      { prefijo: '39',  bandera: '🇮🇹' }, { prefijo: '81',  bandera: '🇯🇵' },
-      { prefijo: '82',  bandera: '🇰🇷' }, { prefijo: '86',  bandera: '🇨🇳' },
-      { prefijo: '91',  bandera: '🇮🇳' }, { prefijo: '61',  bandera: '🇦🇺' },
-      { prefijo: '64',  bandera: '🇳🇿' }, { prefijo: '1',   bandera: '🇺🇸' },
-      { prefijo: '7',   bandera: '🇷🇺' }, { prefijo: '63',  bandera: '🇵🇭' }, 
-      { prefijo: '95',  bandera: '🇲🇲' }
+      { prefijo: '598', bandera: '🇺🇾' }, { prefijo: '58', bandera: '🇻🇪' },
+      { prefijo: '52', bandera: '🇲🇽' }, { prefijo: '54', bandera: '🇦🇷' },
+      { prefijo: '57', bandera: '🇨🇴' }, { prefijo: '51', bandera: '🇵🇪' },
+      { prefijo: '56', bandera: '🇨🇱' }, { prefijo: '55', bandera: '🇧🇷' },
+      { prefijo: '34', bandera: '🇪🇸' }, { prefijo: '44', bandera: '🇬🇧' },
+      { prefijo: '33', bandera: '🇫🇷' }, { prefijo: '49', bandera: '🇩🇪' },
+      { prefijo: '39', bandera: '🇮🇹' }, { prefijo: '81', bandera: '🇯🇵' },
+      { prefijo: '82', bandera: '🇰🇷' }, { prefijo: '86', bandera: '🇨🇳' },
+      { prefijo: '91', bandera: '🇮🇳' }, { prefijo: '61', bandera: '🇦🇺' },
+      { prefijo: '64', bandera: '🇳🇿' }, { prefijo: '1', bandera: '🇺🇸' },
+      { prefijo: '7', bandera: '🇷🇺' }, { prefijo: '63', bandera: '🇵🇭' },
+      { prefijo: '95', bandera: '🇲🇲' }
     ];
 
     const getCountryFlag = (mem) => {
@@ -42,7 +50,7 @@ const handler = async (m, { isOwner, isAdmin, conn, participants, args }) => {
       return '🚩';
     };
 
-    // Agrupar participantes por bandera
+    // Agrupar participantes por bandera - AHORA SIN FILTRO
     const grouped = {};
     for (const mem of participants) {
       const flag = getCountryFlag(mem);
@@ -50,43 +58,37 @@ const handler = async (m, { isOwner, isAdmin, conn, participants, args }) => {
       grouped[flag].push(mem);
     }
 
-    // Ordenar las banderas según el orden definido
     const orderedFlags = countryFlags.map(c => c.bandera).concat(['🚩']);
 
-    // Texto con estética renovada + firma del bot
+    // MEJORA 3: Estética cute
     let messageText = `
-╔════════════════════════════╗
-   🌐 *${groupName}*
-╚════════════════════════════╝
+╭─「 🌐 ${groupName} 」─╮
+│
+│ 👥 Miembros: *${participants.length}*
+│ 📢 ${customMessage}
+│
+╰─────────────────────╯
 
-👥 Integrantes: *${participants.length}*
-📝 Mensaje: *${customMessage}*
-
-╭─── 🌍 Integrantes por país ───╮
+🌍 *MIEMBROS POR PAÍS*
 `;
 
     for (const flag of orderedFlags) {
       if (grouped[flag]) {
+        messageText += `\n${flag} ━━━━━━━━━\n`;
         for (const mem of grouped[flag]) {
           const realJid = mem.jid || mem.id || '';
           const displayNumber = realJid.split('@')[0];
-          messageText += `│ ${flag} @${displayNumber}\n`;
+          messageText += `│ @${displayNumber}\n`;
         }
       }
     }
 
-    messageText += `╰────────────────────────────╯
-
-🤖 *[ For Three Bot ]* 🤖
-    `;
-
-    // Aquí va la imagen (pon tu URL en 'url')
-    const imageUrl = 'https://raw.githubusercontent.com/bandidope/Fotos/refs/heads/master/fotos/logo.png';
+    messageText += `\n\n🤖 *[ For Three Bot ]*`;
 
     await conn.sendMessage(m.chat, {
-      image: { url: imageUrl },
+      image: { url: groupImg }, // Foto del grupo
       caption: messageText,
-      mentions: participants.map(a => a.jid || a.id)
+      mentions: participants.map(a => a.jid || a.id) // Menciona a todos
     }, { quoted: m });
 
   } catch (error) {
