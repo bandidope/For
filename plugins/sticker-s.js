@@ -1,10 +1,10 @@
+import { sticker } from '../lib/sticker.js' // Tu librería de respaldo
 import { Sticker, StickerTypes } from 'wa-sticker-formatter'
 
 let handler = async (m, { conn, usedPrefix, command, args }) => {
     let q = m.quoted? m.quoted : m
     let mime = (q.msg || q).mimetype || q.mediaType || ''
 
-    // CONFIG
     let defaultPack = 'For Three Bot'
     let defaultAuthor = 'Whois'
 
@@ -13,7 +13,7 @@ let handler = async (m, { conn, usedPrefix, command, args }) => {
             if (!/webp|image|video|gif/g.test(mime))
                 return m.reply(`⚠️ *Responde a una imagen, video o gif*\n\n📌 Ejemplo: ${usedPrefix}s`)
 
-            if (/video/g.test(mime) && (q.msg || q).seconds > 11)
+            if (/video/g.test(mime) && (q.msg || q).seconds > 10)
                 return m.reply(`⚠️ *El video es muy largo*\nMáximo 10 segundos`)
 
             let img
@@ -26,6 +26,7 @@ let handler = async (m, { conn, usedPrefix, command, args }) => {
 
             let type = args[0] === 'circle' || args[0] === 'c'? StickerTypes.CIRCLE : StickerTypes.FULL
 
+            // INTENTAR CON WA-STICKER-FORMATTER
             try {
                 let stiker = new Sticker(img, {
                     pack: defaultPack,
@@ -35,12 +36,19 @@ let handler = async (m, { conn, usedPrefix, command, args }) => {
                     background: '#00000'
                 })
                 let buffer = await stiker.toBuffer()
-                await conn.sendFile(m.chat, buffer, 'sticker.webp', '', m, true)
-            } catch (e) {
-                console.error(e)
-                return m.reply('❌ Error al crear sticker')
+                return await conn.sendFile(m.chat, buffer, 'sticker.webp', '', m, true)
+            } catch (e1) {
+                console.log('Fallo wa-sticker-formatter, usando fallback:', e1)
+
+                // FALLBACK CON TU LIB/STICKER.JS
+                try {
+                    let stiker = await sticker(img, false, defaultPack, defaultAuthor)
+                    return await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true)
+                } catch (e2) {
+                    console.error(e2)
+                    return m.reply(`❌ Error al crear sticker\n*Posibles causas:*\n1. La imagen es muy pesada\n2. No tienes ffmpeg instalado\n3. El video > 10s`)
+                }
             }
-            break
         }
 
         case 'toimg': case 'img': {
@@ -75,8 +83,13 @@ let handler = async (m, { conn, usedPrefix, command, args }) => {
                 let buffer = await stiker.toBuffer()
                 await conn.sendFile(m.chat, buffer, 'sticker.webp', '', m, true)
             } catch (e) {
-                console.error(e)
-                m.reply('❌ Error al cambiar marca de agua')
+                // Fallback si falla
+                try {
+                    let stiker = await sticker(media, false, pack, author)
+                    await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true)
+                } catch {
+                    m.reply('❌ Error al cambiar marca de agua')
+                }
             }
             break
         }
