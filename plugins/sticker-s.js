@@ -1,7 +1,5 @@
 import { Sticker, StickerTypes } from 'wa-sticker-formatter'
 import { sticker } from '../lib/sticker.js'
-import { toBuffer } from 'wa-sticker-formatter'
-import sharp from 'sharp' // Para convertir webp a png
 
 let handler = async (m, { conn, usedPrefix, command, args }) => {
     let q = m.quoted? m.quoted : m
@@ -19,11 +17,8 @@ let handler = async (m, { conn, usedPrefix, command, args }) => {
                 return m.reply(`⚠️ *El video es muy largo*\nMáximo 10 segundos`)
 
             let img
-            try {
-                img = await q.download()
-            } catch {
-                return m.reply('❌ Error al descargar')
-            }
+            try { img = await q.download() } 
+            catch { return m.reply('❌ Error al descargar') }
 
             let type = args[0] === 'circle' || args[0] === 'c'? StickerTypes.CIRCLE : StickerTypes.FULL
             try {
@@ -43,12 +38,11 @@ let handler = async (m, { conn, usedPrefix, command, args }) => {
 
             try {
                 let media = await m.quoted.download()
-                // CONVERTIR WEBP A PNG CON SHARP
-                let pngBuffer = await sharp(media).png().toBuffer()
-                await conn.sendFile(m.chat, pngBuffer, 'sticker.png', '✅ *Sticker convertido a imagen*', m)
+                // TRUCO: Mandarlo como.jpg aunque sea webp. WA lo convierte a imagen
+                await conn.sendFile(m.chat, media, 'sticker.jpg', '✅ *Sticker convertido a imagen*', m)
             } catch (e) {
                 console.error(e)
-                m.reply('❌ Error al convertir. Instala: npm i sharp')
+                m.reply('❌ Error al convertir')
             }
             break
         }
