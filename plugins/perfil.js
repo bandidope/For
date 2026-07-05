@@ -1,4 +1,4 @@
-let handler = async (m, { conn, args, usedPrefix, command }) => {
+let handler = async (m, { conn }) => {
     let user = m.sender
     let name = conn.getName(user)
     let tag = '@' + user.split('@')[0]
@@ -16,17 +16,19 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     else if (nivel < 95) rango = 'El más Bot del grupo 👑'
     else rango = esMujer? 'Reyna del grupo 👑' : 'Rey del grupo 👑'
 
-    let txt = `*👤 PERFIL REAL*
+    let txt = `╭━━〔 *PERFIL REAL* 〕━━╮
+┃
+┃ *Usuario:* ${name}
+┃ *Tag:* ${tag}
+┃ *Título:* ${rango}
+┃ *Nivel:* ${nivel} ⭐
+┃ *XP:* ${xp}/5000
+┃ *Coins:* ${monedas} 💎
+┃ *País:* Perú 🇵🇪
+┃
+╰━━━━━━━━━━╯
 
-*Usuario:* ${name}
-*Tag:* ${tag}
-*Título:* ${rango}
-*Nivel:* ${nivel} ⭐
-*XP:* ${xp}/5000
-*Coins:* ${monedas} 💎
-*País:* Perú 🇵🇪
-
-${rango.includes('Rey')? '👑 Todos inclínense ante su majestad' : 'Sigue subiendo'}`
+${rango.includes('Rey')? '👑 Todos inclínense ante su majestad' : 'Sigue subiendo para ser Rey/Reyna'}`
 
     // Foto
     let pp
@@ -36,12 +38,14 @@ ${rango.includes('Rey')? '👑 Todos inclínense ante su majestad' : 'Sigue subi
         pp = 'https://i.imgur.com/2dzxI5A.png'
     }
 
-    conn.sendMessage(m.chat, { image: { url: pp }, caption: txt, mentions: })
+    await conn.sendMessage(m.chat, { 
+        image: { url: pp }, 
+        caption: txt, 
+        mentions: // FIX: aquí va el arreglo
+    })
 }
 
 handler.help = ['perfil']
 handler.tags = ['main']
-handler.command = /^perfil|profile|p$/i // <- IMPORTANTE: así detecta.perfil
-handler.group = false // funciona en grupo y pv
-
+handler.command = /^perfil|profile|p$/i
 export default handler
