@@ -17,7 +17,8 @@ let handler = async (m, { conn }) => {
     m.reply(`*📜 FRASE RANDOM* 📜\n\n"${frase}"`)
 }
 
-handler.command = ['frase']
-handler.tag = ['fun'] // <- ESTA ES LA CATEGORÍA JUEGOS/DIVERSIÓN
 handler.help = ['frase']
+handler.tags = ['fun']
+handler.command = /^(frase)$/i
+handler.group = true
 export default handler
