@@ -1,6 +1,6 @@
 const handler = async (m, { isOwner, isAdmin, conn, participants, args }) => {
   try {
-    if (!(isAdmin || isAdmin)) {
+    if (!(isAdmin || isOwner)) {
       global.dfail('admin', m, conn);
       return;
     }
@@ -9,7 +9,7 @@ const handler = async (m, { isOwner, isAdmin, conn, participants, args }) => {
     const groupMetadata = await conn.groupMetadata(m.chat).catch(() => ({ subject: 'Grupo', participants: [] }));
     const groupName = groupMetadata.subject;
 
-    // MEJORA 1: Foto del grupo. Si no tiene, usa tu logo
+    // SOLO MEJORA 1: Foto del grupo. Si no tiene, usa tu logo
     let groupImg;
     try {
       groupImg = await conn.profilePictureUrl(m.chat, 'image');
@@ -35,7 +35,7 @@ const handler = async (m, { isOwner, isAdmin, conn, participants, args }) => {
       { prefijo: '91', bandera: '🇮🇳' }, { prefijo: '61', bandera: '🇦🇺' },
       { prefijo: '64', bandera: '🇳🇿' }, { prefijo: '1', bandera: '🇺🇸' },
       { prefijo: '7', bandera: '🇷🇺' }, { prefijo: '63', bandera: '🇵🇭' },
-      { prefijo: '95', bandera: '🇲🇲' }
+      { prefijo: '95', bandera: '🇲' }
     ];
 
     const getCountryFlag = (mem) => {
@@ -50,45 +50,47 @@ const handler = async (m, { isOwner, isAdmin, conn, participants, args }) => {
       return '🚩';
     };
 
-    // Agrupar participantes por bandera - AHORA SIN FILTRO
+    // Agrupar participantes por bandera
     const grouped = {};
     for (const mem of participants) {
       const flag = getCountryFlag(mem);
-      if (!grouped[flag]) grouped[flag] = [];
-      grouped[flag].push(mem);
+      if (!grouped) grouped = [];
+      grouped.push(mem);
     }
 
     const orderedFlags = countryFlags.map(c => c.bandera).concat(['🚩']);
 
-    // MEJORA 3: Estética cute
+    // Texto original tuyo
     let messageText = `
-╭─「 🌐 ${groupName} 」─╮
-│
-│ 👥 Miembros: *${participants.length}*
-│ 📢 ${customMessage}
-│
-╰─────────────────────╯
+╔════════════╗
+   🌐 *${groupName}*
+╚════════════╝
 
-🌍 *MIEMBROS POR PAÍS*
+👥 Integrantes: *${participants.length}*
+📝 Mensaje: *${customMessage}*
+
+╭─── 🌍 Integrantes por país ───╮
 `;
 
     for (const flag of orderedFlags) {
-      if (grouped[flag]) {
-        messageText += `\n${flag} ━━━━━━━━━\n`;
-        for (const mem of grouped[flag]) {
+      if (grouped) {
+        for (const mem of grouped) {
           const realJid = mem.jid || mem.id || '';
           const displayNumber = realJid.split('@')[0];
-          messageText += `│ @${displayNumber}\n`;
+          messageText += `│ ${flag} @${displayNumber}\n`;
         }
       }
     }
 
-    messageText += `\n\n🤖 *[ For Three Bot ]*`;
+    messageText += `╰────────────────────────────╯
+
+🤖 *[ For Three Bot ]* 🤖
+    `;
 
     await conn.sendMessage(m.chat, {
       image: { url: groupImg }, // Foto del grupo
       caption: messageText,
-      mentions: participants.map(a => a.jid || a.id) // Menciona a todos
+      mentions: participants.map(a => a.jid || a.id)
     }, { quoted: m });
 
   } catch (error) {
