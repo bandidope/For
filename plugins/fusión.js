@@ -39,7 +39,7 @@ let blue = async (m, { conn, usedPrefix }) => {
         let buffer = canvas.toBuffer('image/png')
         
         let sticker = new Sticker(buffer, {
-            pack: 'Barboza Bot',
+            pack: 'For Three Bot',
             author: 'Blue Filter',
             type: StickerTypes.FULL,
             quality: 70
@@ -61,7 +61,7 @@ let handler = async (m, { conn, command, ...args }) => {
 }
 
 handler.help = ['ascii <texto>', 'blue']
-handler.tags = ['tools', 'sticker']
+handler.tags = ['tools']
 handler.command = ['ascii', 'art', 'blue']
 handler.limit = true
 export default handler
