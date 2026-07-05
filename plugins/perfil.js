@@ -1,7 +1,7 @@
 let handler = async (m, { conn }) => {
-    let user = m.sender
-    let name = conn.getName(user)
-    let tag = '@' + user.split('@')[0]
+    let who = m.sender
+    let name = conn.getName(who)
+    let tag = '@' + who.split('@')[0]
     let nivel = Math.floor(Math.random() * 100) + 1
     let xp = Math.floor(Math.random() * 5000)
     let monedas = Math.floor(Math.random() * 10000)
@@ -33,19 +33,16 @@ ${rango.includes('Rey')? '👑 Todos inclínense ante su majestad' : 'Sigue subi
     // Foto
     let pp
     try {
-        pp = await conn.profilePictureUrl(m.isGroup? m.chat : user, 'image')
+        pp = await conn.profilePictureUrl(m.isGroup? m.chat : who, 'image')
     } catch {
         pp = 'https://i.imgur.com/2dzxI5A.png'
     }
 
-    await conn.sendMessage(m.chat, { 
-        image: { url: pp }, 
-        caption: txt, 
-        mentions: // FIX: aquí va el arreglo
-    })
+    await conn.sendFile(m.chat, pp, 'perfil.jpg', txt, m)
 }
 
 handler.help = ['perfil']
 handler.tags = ['main']
-handler.command = /^perfil|profile|p$/i
+handler.command = ['perfil', 'profile', 'p']
+
 export default handler
