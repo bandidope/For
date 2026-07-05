@@ -9,7 +9,7 @@ const handler = async (m, { isOwner, isAdmin, conn, participants, args }) => {
     const groupMetadata = await conn.groupMetadata(m.chat).catch(() => ({ subject: 'Grupo', participants: [] }));
     const groupName = groupMetadata.subject;
 
-    // SOLO MEJORA 1: Foto del grupo. Si no tiene, usa tu logo
+    // Foto del grupo
     let groupImg;
     try {
       groupImg = await conn.profilePictureUrl(m.chat, 'image');
@@ -17,7 +17,6 @@ const handler = async (m, { isOwner, isAdmin, conn, participants, args }) => {
       groupImg = 'https://raw.githubusercontent.com/bandidope/Fotos/refs/heads/master/fotos/logo.png';
     }
 
-    // Lista de banderas por prefijo
     const countryFlags = [
       { prefijo: '502', bandera: '🇬🇹' }, { prefijo: '503', bandera: '🇸🇻' },
       { prefijo: '504', bandera: '🇭🇳' }, { prefijo: '505', bandera: '🇳🇮' },
@@ -54,13 +53,12 @@ const handler = async (m, { isOwner, isAdmin, conn, participants, args }) => {
     const grouped = {};
     for (const mem of participants) {
       const flag = getCountryFlag(mem);
-      if (!grouped) grouped = [];
-      grouped.push(mem);
+      if (!grouped[flag]) grouped[flag] = []; // <- ARREGLADO
+      grouped[flag].push(mem);
     }
 
     const orderedFlags = countryFlags.map(c => c.bandera).concat(['🚩']);
 
-    // Texto original tuyo
     let messageText = `
 ╔════════════╗
    🌐 *${groupName}*
@@ -73,8 +71,8 @@ const handler = async (m, { isOwner, isAdmin, conn, participants, args }) => {
 `;
 
     for (const flag of orderedFlags) {
-      if (grouped) {
-        for (const mem of grouped) {
+      if (grouped[flag]) { // <- ARREGLADO
+        for (const mem of grouped[flag]) {
           const realJid = mem.jid || mem.id || '';
           const displayNumber = realJid.split('@')[0];
           messageText += `│ ${flag} @${displayNumber}\n`;
@@ -88,14 +86,14 @@ const handler = async (m, { isOwner, isAdmin, conn, participants, args }) => {
     `;
 
     await conn.sendMessage(m.chat, {
-      image: { url: groupImg }, // Foto del grupo
+      image: { url: groupImg },
       caption: messageText,
       mentions: participants.map(a => a.jid || a.id)
-    }, { quoted: m });
+    }); // <- QUITÉ EL QUOTED PARA QUE NO SALGA "ESPERANDO MENSAJE"
 
   } catch (error) {
     console.error("[ERROR EN TODOS]:", error);
-    conn.reply(m.chat, `❌ Ocurrió un error al ejecutar el comando.`, m);
+    conn.reply(m.chat, `❌ Error: ${error.message}`, m); // Ahora te dirá qué error exacto
   }
 };
 
