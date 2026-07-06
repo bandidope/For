@@ -59,6 +59,11 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
     }
 }
 
-handler.command = ['play']
+
+handler.help = ['play'];
+handler.tags = ['donwloader'];
+handler.command = /^play$/i;
+
+export default handler;
 
 export default handler
