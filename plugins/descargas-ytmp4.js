@@ -118,7 +118,7 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
 handler.help = ['ytmp4'].map(v => v + ' <enlace>');
 handler.tags = ['descargas'];
 handler.command = ['ytmp4', 'ytvideo', 'ytmp4dl'];
-handler.register = true;
+handler.register = false;
 handler.limit = true;
 
 export default handler;
