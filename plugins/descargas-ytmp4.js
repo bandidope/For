@@ -1,25 +1,124 @@
-import yts from 'yt-search'
-import fetch from 'node-fetch'
+import fetch from 'node-fetch';
 
-let handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text) return m.reply(`🤖 *[ BOX BOT MD ]* 🤖\n\n🚩 *Ingresa un enlace de YouTube.*`)
-  
-  let res = await yts(text)
-  let vid = res.videos[0]
-  if (!vid) return m.reply(`⚠️ *No se encontró el video.*`)
+// --- Constantes y Configuración ---
+const CAUSA_API_KEY = 'LUFFY-GEAR5'; // Tu API Key de Causa
+const newsletterJid = '12036344793570020@newsletter'; 
+const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡『 🏴‍☠️ Whois Dev 🏴‍☠️ 』࿐⟡';
 
-  let apiUrl = `https://api.evogb.org/dl/ytmp4?url=${encodeURIComponent(vid.url)}&quality=720&key=sasuke`
-  let json = await (await fetch(apiUrl)).json()
-  if (!json.status) return m.reply(`❌ *Error al procesar el video.*`)
+var handler = async (m, { conn, args, usedPrefix, command }) => {
+  const emoji = '🏴‍☠️';
+  const namebotLuffy = 'Sombrero de Paja Bot';
+  const devWhois = '¡Por el Rey de los Piratas!';
 
-  let cap = `🤖 *[ For Three ]* 🤖\n\n🎶 *Título:* ${vid.title}\n📁 *Formato:* MP4 (720p)\n\n⚙️ *Descargando...* 🌀`
+  const contextInfo = {
+    mentionedJid: [m.sender],
+    isForwarded: true,
+    forwardingScore: 999,
+    forwardedNewsletterMessageInfo: {
+      newsletterJid,
+      newsletterName,
+      serverMessageId: -1
+    },
+    externalAdReply: {
+      title: namebotWhois,
+      body: devWhois,
+      thumbnail: global.icons, 
+      sourceUrl: global.redes,  
+      mediaType: 1,
+      renderLargerThumbnail: false
+    }
+  };
 
-  await conn.sendMessage(m.chat, { image: { url: vid.thumbnail }, caption: cap }, { quoted: m })
-  await conn.sendMessage(m.chat, { video: { url: json.data.dl }, mimetype: 'video/mp4' }, { quoted: m })
-}
+  if (!args[0]) {
+    return conn.reply(
+      m.chat,
+      `${emoji} *¡Oye, nakama!* Necesito un enlace de YouTube para descargar ese video.\n\nEjemplo:\n*${usedPrefix + command} https://www.youtube.com/watch?v=dQw4w9WgXcQ*`,
+      m,
+      { contextInfo, quoted: m }
+    );
+  }
 
-handler.help = ['ytmp4 <url>']
-handler.tags = ['downloader']
-handler.command = /^ytmp4$/i
+  try {
+    const url = args[0];
 
-export default handler
+    // Validación de URL
+    if (!url.match(/(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([\w-]{11})(?:\S+)?/)) {
+        return conn.reply(
+            m.chat,
+            `❌ *¡Rayos! Ese no parece un enlace de YouTube válido, nakama.*`,
+            m,
+            { contextInfo, quoted: m }
+        );
+    }
+
+    await conn.reply(
+      m.chat,
+      `🍖 *¡Gomu Gomu no... Descarga!*\n- 🏴‍☠️ ¡Buscando el tesoro en los servidores!`,
+      m,
+      { contextInfo, quoted: m }
+    );
+
+    // *** CAMBIO: URL y Parámetros para Apicausas ***
+    // La API de Causa usa: type=video, url=URL, apikey=KEY
+    const causaApiUrl = `https://rest.apicausas.xyz/api/v1/descargas/youtube?url=${encodeURIComponent(url)}&type=video&apikey=${CAUSA_API_KEY}`;
+
+    const res = await fetch(causaApiUrl);
+    const jsonResponse = await res.json().catch(() => null);
+
+    // Validación de estado de Causa API (usualmente devuelve { status: true, data: {...} })
+    if (!jsonResponse || !jsonResponse.status || !jsonResponse.data) {
+      return conn.reply(
+        m.chat,
+        `❌ *¡Rayos! La API de Causa no respondió correctamente o el enlace falló.*`,
+        m,
+        { contextInfo, quoted: m }
+      );
+    }
+
+    // Estructura de Causa API: jsonResponse.data contiene el título y el objeto download
+    const { title, download } = jsonResponse.data;
+    const downloadURL = download?.url; 
+
+    if (!downloadURL) {
+      return conn.reply(
+        m.chat,
+        `❌ *Error:* No se obtuvo un enlace de descarga directo.`,
+        m,
+        { contextInfo, quoted: m }
+      );
+    }
+
+    await conn.sendMessage(
+      m.chat,
+      {
+        video: { url: downloadURL },
+        caption: 
+`╭━━━━[ 🏴‍☠️ YTMP4 CAUSA API 🏴‍☠️ ]━━━━⬣
+📹 *Título:* ${title || 'Video de YouTube'}
+⚓ *Estado:* ¡Descargado con éxito!
+🏴‍☠️ *Bot:* ${namebotLuffy}
+╰━━━━━━━━━━━━━━━━━━⬣`,
+        mimetype: 'video/mp4',
+        fileName: `${title || 'video'}.mp4`
+      },
+      { contextInfo, quoted: m }
+    );
+
+  } catch (e) {
+    console.error(e);
+    await conn.reply(
+      m.chat,
+      `❌ *¡Error fatal en el Grand Line!* ${e.message}`,
+      m,
+      { contextInfo, quoted: m }
+    );
+  }
+};
+
+handler.help = ['ytmp4'].map(v => v + ' <enlace>');
+handler.tags = ['descargas'];
+handler.command = ['ytmp4', 'ytvideo', 'ytmp4dl'];
+handler.register = true;
+handler.limit = true;
+
+export default handler;
