@@ -15,7 +15,7 @@ let handler = async (m, { conn, text }) => {
 
 ${res.lyrics}
 
-> *Solecito Shopp Bot*`
+> *For Three Bot*`
         
         await conn.sendMessage(m.chat, { 
             image: { url: res.thumbnail }, 
