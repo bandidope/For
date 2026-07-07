@@ -1,48 +1,39 @@
-let handler = async (m, { conn, usedPrefix, command, args }) => {
-  let categoria = args[0] // agarra 'fun', 'info', etc
-  if(!categoria) return m.reply('Usa:.menu <categoria>')
+let handler = async (m, { conn }) => {
+  const imgUrl = 'https://files.evogb.win/7Rs2Rz.jpg'
+  let taguser = '@' + m.sender.split('@')[0]
 
   let plugins = Object.values(global.plugins).filter(p =>!p.disabled && p.help)
-  let cmds = []
+  let totalCmds = plugins.reduce((acc, p) => acc + [].concat(p.help).length, 0)
 
-  for (let p of plugins) {
-    let tags = p.tags || ['main']
-    let helps = [].concat(p.help).filter(Boolean)
-    if(tags.includes(categoria.toLowerCase())){
-      cmds.push(...helps)
-    }
-  }
+  let txt = `
+*🤖 [ FOR THREE BOT v3.2 ]* 🤖
 
-  if(cmds.length === 0) return m.reply(`❌ No hay comandos en la categoría *${categoria}*`)
+👤 Usuario: ${taguser}
+📦 Total Comandos: ${totalCmds}
+⚙️ Prefijo: [. ]
 
-  cmds = [...new Set(cmds)].sort()
+*Elige una categoría* 👇
+`.trim()
 
-  let nombres = {
-    'fun': '🎮 JUEGOS Y DIVERSIÓN',
-    'info': 'ℹ️ INFORMACIÓN',
-    'main': '⚙️ PRINCIPAL',
-    'sorteos': '🎁 SORTEOS',
-    'ventas bot': '🛒 VENTAS BOT'
-  }
+  let buttons = [
+    { buttonId: '.punto menu fun', buttonText: { displayText: '🎮 JUEGOS FUN' }, type: 1 },
+    { buttonId: '.punto menu info', buttonText: { displayText: 'ℹ️ INFO' }, type: 1 },
+    { buttonId: '.punto menu main', buttonText: { displayText: '⚙️ MAIN' }, type: 1 },
+    { buttonId: '.punto menu sorteos', buttonText: { displayText: '🎁 SORTEOS' }, type: 1 },
+    { buttonId: '.punto menu ventas bot', buttonText: { displayText: '🛒 VENTAS' }, type: 1 }
+  ]
 
-  let titulo = nombres[categoria.toLowerCase()] || `🗂️ ${categoria.toUpperCase()}`
-
-  let txt = `*${titulo}* [${cmds.length}]\n\n`
-  txt += cmds.map(v => `> 🌀 ${usedPrefix}${v}`).join('\n')
-  txt += `\n\n━━━━━━━━━━━\n> Usa: ${usedPrefix}comando`
-
-  // Lista desplegable tipo ZEN-BOT
-  const sections = [{
-    title: titulo,
-    rows: cmds.map(cmd => ({
-      title: cmd,
-      rowId: `${usedPrefix}${cmd}`,
-      description: `Usar ${usedPrefix}${cmd}`
-    }))
-  }]
-
-  await conn.sendList(m.chat, `Categoría: ${titulo}`, 'Toca para ver los comandos', 'FOR THREE BOT', 'ABRIR LISTA', sections, m)
+  await conn.sendMessage(m.chat, {
+    image: { url: imgUrl },
+    caption: txt,
+    footer: 'Toca el botón de la categoría',
+    buttons: buttons,
+    headerType: 4,
+    mentions: [m.sender]
+  }, { quoted: m })
 }
 
-handler.command = /^menu$/i
+handler.command = /^(punto\s?menu|pm)$/i //.punto menu o.pm
+handler.tags = ['main']
+handler.help = ['menu']
 export default handler
