@@ -3,19 +3,21 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
   let cmd = command.toLowerCase()
   let diasNums = {'1':'lunes','2':'martes','3':'miercoles','4':'jueves','5':'viernes','6':'sabado'}
 
-  // FIX DEFINITIVO
-  global.db.data.dias[chat]= global.db.data.dias[chat] || {}
-  global.db.data.dias[chat] = global.db.data.dias[chat] || { lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [] }
-  let db = global.db.data.dias[chat]
+  // ARREGLO PARA QUE NO TIRE ERROR
+  global.db.data.dias = global.db.data.dias || {}
+  if (!global.db.data.dias) global.db.data.dias = {}
+  if (!global.db.data.dias.lunes) {
+    global.db.data.dias = { lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [] }
+  }
+  let db = global.db.data.dias
 
   if (cmd.startsWith('set')) {
     if (!isAdmin &&!isOwner) return m.reply('❌ Solo admins')
-    let num = cmd.replace('set','')
-    let dia = diasNums[num]
+    let dia = diasNums[cmd.replace('set','')]
     if (!dia) return m.reply('Usa.set1 al.set6')
 
     let mentions = m.mentionedJid
-    if (!mentions?.length) return m.reply(`Ejemplo:.set${num} @usuario`)
+    if (!mentions?.length) return m.reply(`Ejemplo:.set1 @usuario`)
 
     let nuevos = mentions.filter(x =>!db[dia].includes(x))
     if (!nuevos.length) return m.reply(`> Ya estaban en ${dia.toUpperCase()}`)
