@@ -1,7 +1,7 @@
 let handler = async (m, { conn, args, command, isAdmin, isOwner }) => {
-  let chat = m.chat // ID del grupo
+  let chat = m.chat
 
-  // 1. CREAR DB POR GRUPO - ESTA ES LA LINEA CLAVE
+  // 1. CREAR DB POR GRUPO - BIEN HECHO
   if (!global.db.data.lista) global.db.data.lista = {}
   if (!global.db.data.lista) global.db.data.lista = {
     lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [], extra: []
