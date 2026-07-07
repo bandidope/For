@@ -1,12 +1,12 @@
 let handler = async (m, { conn, args, command, isAdmin, isOwner }) => {
   let chat = m.chat // ID del grupo
 
-  // 1. CREAR DB POR GRUPO - ARREGLO DEFINITIVO
+  // 1. CREAR DB POR GRUPO
   if (!global.db.data.lista) global.db.data.lista = {}
   if (!global.db.data.lista) global.db.data.lista = {
     lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [], extra: []
   }
-  let db = global.db.data.lista
+  let db = global.db.data.lista // <-- AQUI ESTABA EL ERROR
 
   // 2. SACAR DIA Y HORA DE LIMA
   let tz = 'America/Lima'
@@ -19,7 +19,7 @@ let handler = async (m, { conn, args, command, isAdmin, isOwner }) => {
 
   // 3. COMANDO.ver
   if (command === 'ver') {
-    let texto = `📋 *LISTA SEMANAL*\nHoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}* | ${hora}\n\n`
+    let texto = `📋 *LISTA SEMANAL*\nGrupo: ${await conn.getName(chat)}\nHoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}* | ${hora}\n\n`
     let total = 0
     for (let d of ['lunes','martes','miercoles','jueves','viernes','sabado','extra']) {
       total += db[d].length
