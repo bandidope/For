@@ -31,7 +31,7 @@ handler.before = async (m, { conn }) => {
 };
 
 handler.help = ['mute', 'unmute'];
-handler.tags = ['grupos'];
+handler.tags = ['group'];
 handler.command = /^(mute|unmute)$/i;
 handler.group = true;
 handler.admin = true;
