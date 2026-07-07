@@ -1,86 +1,81 @@
-let handler = async (m, { conn, args, isAdmin }) => {
+let handler = async (m, { conn, args, command, isAdmin, isOwner }) => {
   let chat = m.chat
   let user = m.sender
 
   // 1. CREAR DB SI NO EXISTE
-  if (!global.db.data.lista) global.db.data.lista = {}
-  if (!global.db.data.lista[chat]) global.db.data.lista[chat] = {
+  if (!global.db.data.lista) global.db.data.lista = {
     lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [], extra: []
   }
-  let db = global.db.data.lista[chat]
+  let db = global.db.data.lista
 
-  // 2. SACAR DIA DE LIMA
+  // 2. SACAR DIA Y HORA DE LIMA
   let tz = 'America/Lima'
-  let dia = new Date().toLocaleString('es-PE', { timeZone: tz, weekday: 'long' }).toLowerCase()
+  let fecha = new Date()
+  let dia = fecha.toLocaleString('es-PE', { timeZone: tz, weekday: 'long' }).toLowerCase()
   dia = dia.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  let hora = fecha.toLocaleString('es-PE', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: true })
   let esDomingo = dia === 'domingo'
   let diaGuardar = esDomingo? 'extra' : dia
 
-  let op = args[0]
-
-  // 3. MENU
-  if (!op) return m.reply(`*LISTA BOT*
-Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
-
-.lista add Nombre | Numero | Premio
-.lista add Nombre | Numero | Premio | extra
-.lista ver
-.lista reset
-.lista reset extra`)
-
-  // 4. VER LISTA
-  if (op === 'ver') {
-    let texto = `📋 *LISTA SEMANAL*\n\n`
+  // 3. COMANDO.ver - CUALQUIERA PUEDE
+  if (command === 'ver') {
+    let texto = `📋 *LISTA SEMANAL*\nHoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}* | ${hora}\n\n`
+    let hayAlgo = false
     for (let d of ['lunes','martes','miercoles','jueves','viernes','sabado','extra']) {
-      texto += `*${d.toUpperCase()}* [${db[d].length}]\n`
       if (db[d].length > 0) {
+        hayAlgo = true
+        texto += `*${d.toUpperCase()}* [${db[d].length}]\n`
         for (let i of db[d]) {
-          texto += `# ${i.n} | ${i.num} | ${i.p} ${i.tag}\n`
+          texto += `${i.tag} ${i.n} | ${i.num} | ${i.p} | _${i.hora}_\n`
         }
-      } else {
-        texto += `> Vacío\n`
+        texto += `\n`
       }
-      texto += `\n`
     }
+    if (!hayAlgo) texto += `> No hay nada anotado aún`
     return m.reply(texto.trim())
   }
 
-  // 5. RESET/BORRAR
-  if (op === 'reset') {
-    if (!isAdmin &&!isOwner) return m.reply('❌ Solo admins')
-    if (args[1] === 'extra') {
+  // 4. COMANDO.reset - SOLO ADMINS
+  if (command === 'reset') {
+    if (!isAdmin &&!isOwner) return m.reply('❌ *Solo Admins pueden borrar la lista*')
+
+    if (args[0] === 'extra') {
       db.extra = []
-      m.reply('🗑️ EXTRA borrado')
+      await global.db.write()
+      return m.reply('🗑️ *EXTRA borrado por un Admin*')
     } else {
       for (let d of ['lunes','martes','miercoles','jueves','viernes','sabado']) db[d] = []
-      m.reply('🗑️ Lunes a Sabado borrado. EXTRA sigue')
+      await global.db.write()
+      return m.reply('🗑️ *Lunes a Sabado borrado por un Admin*. EXTRA sigue intacto\nUsa `.reset extra` para borrar extra')
     }
-    global.db.write()
-    return
   }
 
-  // 6. ADD/ANOTAR
-  if (op === 'add') {
-    let juntar = args.slice(1).join(' ')
-    let sep = juntar.split('|').map(v => v.trim())
-    let [nombre, numero, premio, extra] = sep
+  // 5. COMANDO.lista - CUALQUIERA PUEDE ANOTAR
+  let juntar = args.join(' ')
+  let sep = juntar.split('|').map(v => v.trim())
+  let [nombre, numero, premio, extra] = sep
 
-    if (!nombre ||!numero ||!premio) return m.reply('Formato mal. Usa:.lista add Nombre | Numero | Premio')
+  if (!nombre ||!numero ||!premio) return m.reply(`❌ *Formato mal*
 
-    let guardarEn = extra?.toLowerCase() === 'extra'? 'extra' : diaGuardar
-    let tag = guardarEn === 'extra'? (esDomingo? '🛒' : '📦') : '✅'
+*COMANDOS:*
+.lista Nombre | Numero | Premio
+.lista Nombre | Numero | Premio | extra
+.ver
+.reset *Solo Admins*`)
 
-    db[guardarEn].push({n: nombre, num: numero, p: premio, tag: tag})
-    global.db.write()
+  let guardarEn = extra?.toLowerCase() === 'extra'? 'extra' : diaGuardar
+  let tag = guardarEn === 'extra'? (esDomingo? '🛒' : '📦') : '✅'
 
-    let aviso = esDomingo? '⚠️ *DOMINGO - Dia de Ventas*\nSe guardo en EXTRA 🛒\n\n' : ''
-    return m.reply(`${aviso}${tag} *${guardarEn.toUpperCase()}*\n# ${nombre} | ${numero} | ${premio}`)
-  }
+  db[guardarEn].push({n: nombre, num: numero, p: premio, tag: tag, hora: hora})
+  await global.db.write()
+
+  let aviso = esDomingo? '⚠️ *DOMINGO - Dia de Ventas*\nSe guardo en EXTRA 🛒\n\n' : ''
+  return m.reply(`${aviso}${tag} *ANOTADO EN ${guardarEn.toUpperCase()}* a las ${hora}\n\n# ${nombre} | ${numero} | ${premio}`)
 }
 
-handler.help = ['lista ( staff )']
-handler.tags = ['sorteos staff']
-handler.command = /^lista$/i
-handler.group = false
+handler.help = ['lista', 'ver', 'reset']
+handler.tags = ['sorteos']
+handler.command = /^(lista|ver|reset)$/i
+handler.group = true
 handler.admin = false
 export default handler
