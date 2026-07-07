@@ -1,78 +1,62 @@
 let handler = async (m, { conn, args, command, isAdmin, isOwner }) => {
     let chat = m.chat
     
-    // 1. INICIALIZAR DB POR GRUPO - FORMA SEGURA
+    // INICIALIZAR CORRECTO POR GRUPO
     global.db.data.lista = global.db.data.lista || {}
     global.db.data.lista = global.db.data.lista || {
         lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [], extra: []
     }
     let db = global.db.data.lista
 
-    // 2. HORA Y DIA DE LIMA
+    // HORA LIMA
     let tz = 'America/Lima'
     let now = new Date()
     let dia = now.toLocaleString('es-PE', { timeZone: tz, weekday: 'long' }).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     let hora = now.toLocaleString('es-PE', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: true })
-    
     let esDomingo = dia === 'domingo'
     let diaGuardar = esDomingo ? 'extra' : dia
 
-    // 3. COMANDO .VER
+    // .VER
     if (command === 'ver') {
-        let nombreGrupo = await conn.getName(chat).catch(_ => 'Este grupo')
+        let nombreGrupo = await conn.getName(chat).catch(_ => 'Grupo')
         let texto = `📋 *LISTA SEMANAL*\n*Grupo:* ${nombreGrupo}\n*Hoy:* ${esDomingo ? 'DOMINGO' : dia.toUpperCase()} | ${hora}\n\n`
         let total = 0
-        
         for (let d of ['lunes','martes','miercoles','jueves','viernes','sabado','extra']) {
             total += db[d].length
             texto += `*${d.toUpperCase()}* [${db[d].length}]\n`
-            if (db[d].length === 0) {
-                texto += `> Vacío\n\n`
-            } else {
-                for (let i of db[d]) {
-                    texto += `${i.tag} ${i.nombre} | ${i.numero} | ${i.premio} | _${i.hora}_\n`
-                }
-                texto += `\n`
-            }
+            texto += db[d].length === 0 ? `> Vacío\n` : db[d].map(i => `${i.tag} ${i.nombre} | ${i.numero} | ${i.premio} | _${i.hora}_`).join('\n') + '\n\n'
         }
         texto += `*TOTAL ANOTADOS: ${total}*`
         return m.reply(texto.trim())
     }
 
-    // 4. COMANDO .RESET SOLO ADMINS
+    // .RESET SOLO ADMINS
     if (command === 'reset') {
-        if (!isAdmin && !isOwner) return m.reply('❌ *Solo Admins pueden usar este comando*')
-        
+        if (!isAdmin && !isOwner) return m.reply('❌ *Solo Admins*')
         if (args[0] === 'extra') {
             db.extra = []
+            await global.db.write()
+            return m.reply('🗑️ *EXTRA borrado*')
         } else {
             for (let d of ['lunes','martes','miercoles','jueves','viernes','sabado']) db[d] = []
+            await global.db.write()
+            return m.reply('🗑️ *Lunes a Sábado borrado*. EXTRA sigue')
         }
-        await global.db.write()
-        return m.reply(args[0] === 'extra' ? '🗑️ *EXTRA borrado*' : '🗑️ *Lunes a Sábado borrado*. EXTRA sigue')
     }
 
-    // 5. COMANDO .LISTA
-    let juntar = args.join(' ')
-    let sep = juntar.split('|').map(v => v.trim())
-    let [nombre, numero, premio, extra] = sep
+    // .LISTA
+    let [nombre, numero, premio, extra] = args.join(' ').split('|').map(v => v.trim())
+    if (!nombre || !numero || !premio) return m.reply(`❌ *Formato:*\n.lista Nombre | Numero | Premio\n.lista Nombre | Numero | Premio | extra\n.ver\n.reset`)
 
-    if (!nombre || !numero || !premio) {
-        return m.reply(`❌ *Formato incorrecto*\n\n.lista Nombre | Numero | Premio\n.lista Nombre | Numero | Premio | extra\n.ver\n.reset *Solo Admins*`)
-    }
-
-    let guardarEn = (extra && extra.toLowerCase() === 'extra') ? 'extra' : diaGuardar
+    let guardarEn = extra?.toLowerCase() === 'extra' ? 'extra' : diaGuardar
     let tag = guardarEn === 'extra' ? (esDomingo ? '🛒' : '📦') : '✅'
 
     db[guardarEn].push({ nombre, numero, premio, hora, tag })
     await global.db.write()
 
-    let aviso = esDomingo ? '⚠️ *DOMINGO - Día de Ventas*\nSe guardó en EXTRA 🛒\n\n' : ''
-    return m.reply(`${aviso}${tag} *ANOTADO EN ${guardarEn.toUpperCase()}* a las ${hora}\n\n*${nombre}* | ${numero} | ${premio}`)
+    return m.reply(`${esDomingo ? '⚠️ *DOMINGO*\nSe guardó en EXTRA 🛒\n\n' : ''}${tag} *ANOTADO EN ${guardarEn.toUpperCase()}* a las ${hora}\n\n*${nombre}* | ${numero} | ${premio}`)
 }
 
-handler.help = ['lista', 'ver', 'reset']
-handler.tags = ['sorteos']
 handler.command = /^(lista|ver|reset)$/i
 handler.group = true
 export default handler
