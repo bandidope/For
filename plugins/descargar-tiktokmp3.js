@@ -47,7 +47,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 };
 
 handler.help = ['ttmp3', 'tiktokmp3'];
-handler.tags = ['donwloader'];
+handler.tags = ['Descargas'];
 handler.command = /^ttmp3|tiktokmp3$/i;
 
 export default handler;
