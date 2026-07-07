@@ -9,7 +9,7 @@ let handler = async (m, { conn }) => {
   txt += `━━━━━━━━━━\n\n`
   txt += `👤 *Vendedor:* Yallico\n`
   txt += `📱 *WhatsApp:* wa.me/51936994155\n`
-txt += `🌀 *Link:* https://bandidope.github.io/For-Three-Bot/\n`
+txt += `🌀 *Link:* https://forthreepro.github.io/For-Three-Bot\n`
   txt += `👥 *Grupo:* https://chat.whatsapp.com/LjPhgjqCM934QEzYz3vrVk\n\n`
   txt += `> *Info:*.catalogo | *Garantía:*.garantia`
   
