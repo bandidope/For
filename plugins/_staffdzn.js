@@ -1,18 +1,13 @@
 let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
-  let chat = m.chat
+  let chat = m.chat // ID del grupo
   let cmd = command.toLowerCase()
   let dias = ['lunes','martes','miercoles','jueves','viernes','sabado']
 
-  // FIX DEFINITIVO: CREAR POR GRUPO
+  // INICIALIZAR DB POR GRUPO
   global.db.data.dias = global.db.data.dias || {}
   if (!global.db.data.dias) global.db.data.dias = {}
-  let db = global.db.data.dias
-
-  // Si es la primera vez en este grupo, crear los dias
-  if (!db.lunes) {
-    db = { lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [] }
-    global.db.data.dias = db
-  }
+  if (!global.db.data.dias.lunes) global.db.data.dias = { lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [] }
+  let db = global.db.data.dias // <- AQUI ESTA EL TRUCO
 
   if (dias.includes(cmd)) {
     let dia = cmd
