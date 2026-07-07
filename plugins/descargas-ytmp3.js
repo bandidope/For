@@ -12,14 +12,13 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 
     if (!text) return conn.reply(m.chat, `*☁️ For Three - YT MP3*\n\n*Uso:* ${usedPrefix + command} [link] [128|320]\n*Ejemplo:* ${usedPrefix + command} https://youtu.be/xxx 320`, m)
 
-    // Validar link de YT
     if (!text.match(/(youtu\.be\/|youtube\.com\/watch\?v=)/)) {
         return m.reply(`*❌ Link inválido*\nManda un link de YouTube válido`)
     }
 
     let args = text.trim().split(' ')
     let url = args[0]
-    let quality = args[1] || '128' // 128 o 320
+    let quality = args[1] || '128'
 
     await m.react('⏳')
     let timeout = setTimeout(() => m.react('🕐'), 12000)
@@ -29,30 +28,22 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         let resDl = await fetch(apiUrl)
         let jsonDl = await resDl.json()
 
-        // Reintento si falla
-        if (!jsonDl.status) {
-            await new Promise(r => setTimeout(r, 2000))
-            resDl = await fetch(apiUrl)
-            jsonDl = await resDl.json()
-            if (!jsonDl.status) throw jsonDl.message || 'Error al procesar'
-        }
+        if (!jsonDl.status ||!jsonDl.data?.dl) throw jsonDl.message || 'Error al procesar'
 
         let { title, thumbnail, author, dl, quality: ql, duration } = jsonDl.data
-        if (!dl) throw 'No se encontró el link de descarga'
+
+        // FIX 1: Descargar el audio en buffer en vez de mandar el link
+        await m.reply('*Descargando audio... espera*')
+        let audioBuffer = await fetch(dl).then(v => v.buffer())
 
         clearTimeout(timeout)
 
-        // Advertencia si dura mucho
-        if (duration && parseInt(duration) > 3600) {
-            await m.reply(`*⚠️ Video muy largo:* ${Math.floor(duration/60)} min\nPuede tardar en enviarse`)
-        }
-
         let info = `*☁️ For Three - Audio Descargado*\n\n📌 *Título:* ${title}\n👤 *Canal:* ${author?.name || 'Desconocido'}\n⏱️ *Duración:* ${duration? new Date(duration * 1000).toISOString().substr(11, 8) : 'N/A'}\n💿 *Calidad:* ${ql || quality + 'kbps'}\n\n👤 *Creador:* Whois Yallico\n⚡ *Canal:* For Three`
 
-        // Enviar thumbnail + audio junto
+        // FIX 2: Mandar con thumbnail + audio/mp4
         await conn.sendMessage(m.chat, {
-            audio: { url: dl },
-            mimetype: 'audio/mpeg',
+            audio: audioBuffer,
+            mimetype: 'audio/mp4', // <-- clave para que WA lo reproduzca
             fileName: `${title}.mp3`,
             contextInfo: {
                 externalAdReply: {
