@@ -4,9 +4,9 @@ let handler = async (m, { conn }) => {
     process.send('reset')
 }
 
-handler.help = ['reset']
+handler.help = ['reiniciar']
 handler.tags = ['owner']
-handler.command = ['reset']
+handler.command = ['reiniciar']
 handler.rowner = true
 
 export default handler
