@@ -19,7 +19,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 }
 
 handler.help = ['grupo abrir', 'grupo cerrar']
-handler.tags = ['grupos']
+handler.tags = ['group']
 handler.command = ['group', 'grupo'] 
 handler.admin = true
 handler.botAdmin = true
