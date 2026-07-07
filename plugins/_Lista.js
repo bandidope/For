@@ -69,6 +69,8 @@ let handler = async (m, { conn, args, command, isAdmin, isOwner }) => {
     return m.reply(`${esDomingo ? '⚠️ *DOMINGO*\nSe guardó en EXTRA 🛒\n\n' : ''}${tag} *ANOTADO EN ${guardarEn.toUpperCase()}* a las ${hora}\n\n*${nombre}* | ${numero} | ${premio}`)
 }
 
+handler.help = ['lista', 'ver', 'reset']
+handler.tags = ['Staff Sorteo']
 handler.command = /^(lista|ver|reset)$/i
 handler.group = true
 export default handler
