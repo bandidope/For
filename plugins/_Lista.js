@@ -1,12 +1,12 @@
 let handler = async (m, { conn, args, command, isAdmin, isOwner }) => {
   let chat = m.chat // ID del grupo
 
-  // 1. CREAR DB POR GRUPO
+  // 1. CREAR DB POR GRUPO - ARREGLO DEFINITIVO
   if (!global.db.data.lista) global.db.data.lista = {}
   if (!global.db.data.lista) global.db.data.lista = {
     lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [], extra: []
   }
-  let db = global.db.data.lista // <- AHORA SI ES POR GRUPO
+  let db = global.db.data.lista
 
   // 2. SACAR DIA Y HORA DE LIMA
   let tz = 'America/Lima'
