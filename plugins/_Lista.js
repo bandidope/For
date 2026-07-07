@@ -1,12 +1,12 @@
 let handler = async (m, { conn, args, command, isAdmin, isOwner }) => {
-  let chat = m.chat
+  let chat = m.chat // ID del grupo
 
-  // 1. CREAR DB SI NO EXISTE - ARREGLO AQUI
+  // 1. CREAR DB POR GRUPO
   if (!global.db.data.lista) global.db.data.lista = {}
-  if (!global.db.data.lista[chat]) global.db.data.lista[chat] = {
+  if (!global.db.data.lista) global.db.data.lista = {
     lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [], extra: []
   }
-  let db = global.db.data.lista[chat] // <-- Ahora si apunta al chat
+  let db = global.db.data.lista // <- AHORA SI ES POR GRUPO
 
   // 2. SACAR DIA Y HORA DE LIMA
   let tz = 'America/Lima'
@@ -20,18 +20,20 @@ let handler = async (m, { conn, args, command, isAdmin, isOwner }) => {
   // 3. COMANDO.ver
   if (command === 'ver') {
     let texto = `📋 *LISTA SEMANAL*\nHoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}* | ${hora}\n\n`
-    let hayAlgo = false
+    let total = 0
     for (let d of ['lunes','martes','miercoles','jueves','viernes','sabado','extra']) {
+      total += db[d].length
+      texto += `*${d.toUpperCase()}* [${db[d].length}]\n`
       if (db[d].length > 0) {
-        hayAlgo = true
-        texto += `*${d.toUpperCase()}* [${db[d].length}]\n`
         for (let i of db[d]) {
           texto += `${i.tag} ${i.n} | ${i.num} | ${i.p} | _${i.hora}_\n`
         }
-        texto += `\n`
+      } else {
+        texto += `> Vacío\n`
       }
+      texto += `\n`
     }
-    if (!hayAlgo) texto += `> No hay nada anotado aún`
+    texto += `*TOTAL ANOTADOS: ${total}*`
     return m.reply(texto.trim())
   }
 
@@ -66,7 +68,7 @@ let handler = async (m, { conn, args, command, isAdmin, isOwner }) => {
   let guardarEn = extra?.toLowerCase() === 'extra'? 'extra' : diaGuardar
   let tag = guardarEn === 'extra'? (esDomingo? '🛒' : '📦') : '✅'
 
-  db[guardarEn].push({n: nombre, num: numero, p: premio, tag: tag, hora: hora}) // <- AQUI YA NO DA ERROR
+  db[guardarEn].push({n: nombre, num: numero, p: premio, tag: tag, hora: hora})
   await global.db.write()
 
   let aviso = esDomingo? '⚠️ *DOMINGO - Dia de Ventas*\nSe guardo en EXTRA 🛒\n\n' : ''
