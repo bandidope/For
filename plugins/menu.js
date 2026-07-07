@@ -1,6 +1,7 @@
 let handler = async (m, { conn, usedPrefix }) => {
   const imgUrl = 'https://files.evogb.win/7Rs2Rz.jpg'
   let taguser = '@' + m.sender.split('@')[0]
+  const linkVentas = 'https://forthreepro.github.io/For-Three-Bot'
 
   let plugins = Object.values(global.plugins).filter(p =>!p.disabled && p.help)
   let categories = {}
@@ -16,7 +17,7 @@ let handler = async (m, { conn, usedPrefix }) => {
     })
   }
 
-  // AQUI PERSONALIZAS LOS NOMBRES DE LAS CATEGORÍAS 👇
+  // NOMBRES PERSONALIZADOS DE CATEGORÍAS
   const nombreCategorias = {
     'fun': '🎮 ZONA GAMER',
     'info': 'ℹ️ CENTRO DE INFORMACIÓN',
@@ -58,7 +59,6 @@ let handler = async (m, { conn, usedPrefix }) => {
 
   for (let cat of sortedCats) {
     let cmds = [...new Set(categories[cat])].sort()
-    // Usa nombre personalizado o el original
     let titulo = nombreCategorias[cat] || `✦ ${cat.toUpperCase()}`
 
     txt += `╭─❒ ${titulo} [${cmds.length}]\n`
@@ -69,8 +69,13 @@ let handler = async (m, { conn, usedPrefix }) => {
   }
 
   txt += `✧━━━━━━━━━━━✧
+╭─❒ 🛒 ¿QUIERES TU BOT?
+│ Adquiere ForThreeBot Pro
+│ ${linkVentas}
+╰─────────────────
+
    © 2026 FOR THREE BOT
-   github.com/BandidoPe
+   Crystal Edition
 ✧━━━━━━━━━━━━━━━━━━━✧`
 
   await conn.sendMessage(m.chat, {
