@@ -1,4 +1,4 @@
-let handler = async (m, { conn, args, isAdmin, isOwner }) => {
+let handler = async (m, { conn, args, isAdmin }) => {
   let chat = m.chat
   let user = m.sender
 
@@ -81,6 +81,6 @@ Hoy: *${esDomingo? 'DOMINGO' : dia.toUpperCase()}*
 handler.help = ['lista ( staff )']
 handler.tags = ['sorteos staff']
 handler.command = /^lista$/i
-handler.group = true
-handler.admin = true
+handler.group = false
+handler.admin = false
 export default handler
