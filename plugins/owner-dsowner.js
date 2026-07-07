@@ -1,51 +1,56 @@
-import { readdirSync, unlinkSync, existsSync, promises as fs } from 'fs';
-import path from 'path';
+import { exec } from 'child_process'
+import { readdirSync, unlinkSync, existsSync, statSync } from 'fs'
+import path from 'path'
 
-var handler = async (m, { conn, usedPrefix }) => {
+var handler = async (m, { conn, isOwner }) => {
+    if (!isOwner) return m.reply('❌ *Solo Owner*')
+    
     if (global.conn.user.jid !== conn.user.jid) {
-        return conn.reply(m.chat, '☯︎ *Utiliza este comando directamente en el número principal del Bot*', m);
+        return conn.reply(m.chat, '☯︎ *Utiliza este comando directamente en el número principal del Bot*', m)
     }
 
-    await conn.reply(m.chat, '🂱 *Iniciando proceso de eliminación de todos los archivos de sesión, excepto el archivo creds.json...*', m);
+    await m.reply('🔄 *Reiniciando + Limpiando basura...*\n*La sesión NO se borrará*')
+    m.react('⏳')
 
-    // Define rwait como un emoji o identificador
-    const rwait = '⏳'; // Emoji de espera
-    m.react(rwait);
+    // 1. LIMPIAR BASURA: tmp, cache, logs
+    let carpetas = ['./tmp', './cache'] 
+    let total = 0
 
-    let sessionPath = './Sesiones/Principal';
-    try {
-        if (!existsSync(sessionPath)) {
-            return await conn.reply(m.chat, '💻 *La carpeta ya fue limpiada*', m);
+    for (let carpeta of carpetas) {
+        if (!existsSync(carpeta)) continue
+        
+        let files = readdirSync(carpeta)
+        for (let file of files) {
+            let filePath = path.join(carpeta, file)
+            try {
+                if (statSync(filePath).isFile()) {
+                    unlinkSync(filePath)
+                    total++
+                }
+            } catch {}
         }
-
-        let files = await fs.readdir(sessionPath);
-        let filesDeleted = 0;
-
-        for (const file of files) {
-            if (file !== 'creds.json') {
-                await fs.unlink(path.join(sessionPath, file));
-                filesDeleted++;
-            }
-        }
-
-        if (filesDeleted === 0) {
-            await conn.reply(m.chat, '💻 *La carpeta ya fue limpiada*', m);
-        } else {
-            const done = '✅'; // Emoji de hecho
-            m.react(done);
-            await conn.reply(m.chat, `⚠︎ *Se eliminaron ${filesDeleted} archivos de sesión, excepto el archivo creds.json*`, m);
-            await conn.reply(m.chat, '𒊹︎︎︎ *¿Me ves o no futuro cliente?*', m);
-        }
-    } catch (err) {
-        console.error('Error al leer la carpeta o los archivos de sesión:', err);
-        await conn.reply(m.chat, '𖠌 *Ocurrió un fallo*', m);
     }
+
+    await m.reply(`🗑️ *Basura eliminada:* ${total} archivos`)
+
+    // 2. REINICIAR BOT: sin cerrar sesión
+    // OPCION 1: Si usas PM2
+    exec('pm2 restart all', (err) => {
+        if (err) {
+            console.error(err)
+            // OPCION 2: Si NO usas PM2 en Pterodactyl
+            exec('kill 1', (err2) => { 
+                if (err2) conn.reply(m.chat, '𖠌 *Error al reiniciar*', m)
+            })
+        }
+    })
+
+    m.react('✅')
 }
 
-handler.help = ['dsowner'];
-handler.tags = ['owner'];
-handler.command = ['delai', 'delyaemori', 'dsowner', 'clearallsession'];
+handler.help = ['dsowner']
+handler.tags = ['owner']
+handler.command = ['dsowner', 'restart', 'reiniciar']
+handler.rowner = true
 
-handler.rowner = true;
-
-export default handler;
+export default handler
