@@ -1,13 +1,23 @@
+import fs from 'fs'
+import path from 'path'
+
+let dir = './database/sorteos' // carpeta donde se guardará todo
+if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+
 let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
-  let chat = m.chat // ID del grupo
+  let chat = m.chat
   let cmd = command.toLowerCase()
   let dias = ['lunes','martes','miercoles','jueves','viernes','sabado']
+  let file = path.join(dir, `${chat}.json`) // 1 ARCHIVO POR GRUPO
 
-  // INICIALIZAR DB POR GRUPO
-  global.db.data.dias = global.db.data.dias || {}
-  if (!global.db.data.dias) global.db.data.dias = {}
-  if (!global.db.data.dias.lunes) global.db.data.dias = { lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [] }
-  let db = global.db.data.dias // <- AQUI ESTA EL TRUCO
+  // LEER DB DEL GRUPO
+  let db = { lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [] }
+  if (fs.existsSync(file)) {
+    db = JSON.parse(fs.readFileSync(file))
+  }
+
+  // GUARDAR FUNCIÓN
+  const save = () => fs.writeFileSync(file, JSON.stringify(db, null, 2))
 
   if (dias.includes(cmd)) {
     let dia = cmd
@@ -20,7 +30,7 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
       if (!nuevos.length) return m.reply(`> Ya estaban en ${dia.toUpperCase()}`)
 
       db[dia].push(...nuevos)
-      await global.db.write()
+      save()
       return m.reply(`✅ Agregado a *${dia.toUpperCase()}*`, null, {mentions: nuevos})
     }
 
@@ -46,7 +56,7 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
 
       let borrados = db[dia]
       db[dia] = []
-      await global.db.write()
+      save()
 
       let nombreGrupo = await conn.getName(chat).catch(_ => 'Grupo')
       let pp
