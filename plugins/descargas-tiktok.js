@@ -63,7 +63,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 }
 
 handler.help = ['tiktok']
-handler.tags = ['descargas']
+handler.tags = ['Descargas']
 handler.command = /^(tiktok|tt|tiktokdl)$/i
 handler.limit = true
 
