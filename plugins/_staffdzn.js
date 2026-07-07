@@ -1,31 +1,32 @@
 let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
-  let chat = m.chat // ID del grupo
+  let chat = m.chat
   let cmd = command.toLowerCase()
   let dias = ['lunes','martes','miercoles','jueves','viernes','sabado']
 
-  // FIX: CREAR OBJETO POR CADA GRUPO
+  // FIX DEFINITIVO: CREAR POR GRUPO
   global.db.data.dias = global.db.data.dias || {}
   if (!global.db.data.dias) global.db.data.dias = {}
-  if (!global.db.data.dias) {
-    global.db.data.dias = { lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [] }
-  }
-  let db = global.db.data.dias // <- AQUI ESTABA EL ERROR
+  let db = global.db.data.dias
 
-  // Si el comando es un dia
+  // Si es la primera vez en este grupo, crear los dias
+  if (!db.lunes) {
+    db = { lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [] }
+    global.db.data.dias = db
+  }
+
   if (dias.includes(cmd)) {
     let dia = cmd
     let sub = args[0]?.toLowerCase()
 
-    // 1. AGREGAR:.lunes @tag @tag
+    // 1. AGREGAR:.lunes @tag
     if (m.mentionedJid?.length) {
       if (!isAdmin &&!isOwner) return m.reply('❌ Solo admins')
-      let mentions = m.mentionedJid
-      let nuevos = mentions.filter(x =>!db[dia].includes(x))
-      if (!nuevos.length) return m.reply(`> Ya estaban todos en ${dia.toUpperCase()}`)
+      let nuevos = m.mentionedJid.filter(x =>!db[dia].includes(x))
+      if (!nuevos.length) return m.reply(`> Ya estaban en ${dia.toUpperCase()}`)
 
       db[dia].push(...nuevos)
       await global.db.write()
-      return m.reply(`✅ Agregado a *${dia.toUpperCase()}* del grupo`, null, {mentions: nuevos})
+      return m.reply(`✅ Agregado a *${dia.toUpperCase()}*`, null, {mentions: nuevos})
     }
 
     // 2. VER:.lunes ver
@@ -63,12 +64,10 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
       return conn.sendMessage(chat, { image: { url: pp }, caption: texto, mentions: borrados })
     }
 
-    return m.reply(`Usa:\n.${dia} @tag → Agregar\n.${dia} ver → Ver lista\n.${dia} eliminar → Borrar lista`)
+    return m.reply(`Usa:\n.${dia} @tag → Agregar\n.${dia} ver → Ver\n.${dia} eliminar → Borrar`)
   }
 }
 
-handler.help = ['.lunes @tag', '.lunes ver', '.lunes eliminar']
-handler.tags = ['sorteos staff']
 handler.command = /^(lunes|martes|miercoles|jueves|viernes|sabado)$/i
 handler.group = true
 handler.admin = true
