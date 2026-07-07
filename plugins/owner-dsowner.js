@@ -1,56 +1,62 @@
-import { exec } from 'child_process'
 import { readdirSync, unlinkSync, existsSync, statSync } from 'fs'
 import path from 'path'
 
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B'
+    const k = 1024
+    const sizes = ['B', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
 var handler = async (m, { conn, isOwner }) => {
     if (!isOwner) return m.reply('❌ *Solo Owner*')
-    
-    if (global.conn.user.jid !== conn.user.jid) {
+
+    if (global.conn.user.jid!== conn.user.jid) {
         return conn.reply(m.chat, '☯︎ *Utiliza este comando directamente en el número principal del Bot*', m)
     }
 
-    await m.reply('🔄 *Reiniciando + Limpiando basura...*\n*La sesión NO se borrará*')
+    await m.reply('🧹 *Limpieza Total Iniciada...*\n*No se tocará creds.json*')
     m.react('⏳')
 
-    // 1. LIMPIAR BASURA: tmp, cache, logs
-    let carpetas = ['./tmp', './cache'] 
-    let total = 0
+    // TODAS LAS CARPETAS DE BASURA
+    let carpetas = [
+        './tmp',
+        './cache',
+        './database',
+        './Sesiones/Principal' // <- AHORA SI LIMPIA SESIONES VIEJAS
+    ]
+    let totalArchivos = 0
+    let totalBytes = 0
 
     for (let carpeta of carpetas) {
         if (!existsSync(carpeta)) continue
-        
+
         let files = readdirSync(carpeta)
         for (let file of files) {
+            // PROTEGER ARCHIVOS IMPORTANTES
+            if (file === 'creds.json') continue
+            if (file.startsWith('app-state-sync-key')) continue // Estos mantienen la sesión
+
             let filePath = path.join(carpeta, file)
             try {
-                if (statSync(filePath).isFile()) {
+                let stats = statSync(filePath)
+                if (stats.isFile()) {
+                    totalBytes += stats.size
                     unlinkSync(filePath)
-                    total++
+                    totalArchivos++
                 }
             } catch {}
         }
     }
 
-    await m.reply(`🗑️ *Basura eliminada:* ${total} archivos`)
-
-    // 2. REINICIAR BOT: sin cerrar sesión
-    // OPCION 1: Si usas PM2
-    exec('pm2 restart all', (err) => {
-        if (err) {
-            console.error(err)
-            // OPCION 2: Si NO usas PM2 en Pterodactyl
-            exec('kill 1', (err2) => { 
-                if (err2) conn.reply(m.chat, '𖠌 *Error al reiniciar*', m)
-            })
-        }
-    })
-
     m.react('✅')
+    await m.reply(`🗑️ *Limpieza V3 Completa*\n\n📁 Archivos eliminados: ${totalArchivos}\n💾 Espacio liberado: ${formatBytes(totalBytes)}\n\n*Sesión protegida - creds.json intacto*\n*No se reinició el bot*`)
 }
 
 handler.help = ['dsowner']
 handler.tags = ['owner']
-handler.command = ['dsowner', 'restart', 'reiniciar']
+handler.command = ['dsowner', 'limpiar', 'basura', 'cleartmp', 'clearall']
 handler.rowner = true
 
 export default handler
