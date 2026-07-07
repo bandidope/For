@@ -1,14 +1,16 @@
 let handler = async (m, { conn, args, command, isAdmin, isOwner }) => {
     let chat = m.chat
     
-    // INICIALIZAR CORRECTO POR GRUPO
+    // INICIALIZAR DB POR GRUPO - FORMA QUE SI FUNCIONA
     global.db.data.lista = global.db.data.lista || {}
-    global.db.data.lista = global.db.data.lista || {
-        lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [], extra: []
+    if (Object.keys(global.db.data.lista).length === 0) {
+        global.db.data.lista = {
+            lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: [], extra: []
+        }
     }
     let db = global.db.data.lista
 
-    // HORA LIMA
+    // HORA Y DIA LIMA
     let tz = 'America/Lima'
     let now = new Date()
     let dia = now.toLocaleString('es-PE', { timeZone: tz, weekday: 'long' }).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -24,24 +26,26 @@ let handler = async (m, { conn, args, command, isAdmin, isOwner }) => {
         for (let d of ['lunes','martes','miercoles','jueves','viernes','sabado','extra']) {
             total += db[d].length
             texto += `*${d.toUpperCase()}* [${db[d].length}]\n`
-            texto += db[d].length === 0 ? `> Vacío\n` : db[d].map(i => `${i.tag} ${i.nombre} | ${i.numero} | ${i.premio} | _${i.hora}_`).join('\n') + '\n\n'
+            if (db[d].length > 0) {
+                texto += db[d].map(i => `${i.tag} ${i.nombre} | ${i.numero} | ${i.premio} | _${i.hora}_`).join('\n') + '\n\n'
+            } else {
+                texto += `> Vacío\n`
+            }
         }
         texto += `*TOTAL ANOTADOS: ${total}*`
         return m.reply(texto.trim())
     }
 
-    // .RESET SOLO ADMINS
+    // .RESET
     if (command === 'reset') {
         if (!isAdmin && !isOwner) return m.reply('❌ *Solo Admins*')
         if (args[0] === 'extra') {
             db.extra = []
-            await global.db.write()
-            return m.reply('🗑️ *EXTRA borrado*')
         } else {
-            for (let d of ['lunes','martes','miercoles','jueves','viernes','sabado']) db[d] = []
-            await global.db.write()
-            return m.reply('🗑️ *Lunes a Sábado borrado*. EXTRA sigue')
+            ['lunes','martes','miercoles','jueves','viernes','sabado'].forEach(d => db[d] = [])
         }
+        await global.db.write()
+        return m.reply(args[0] === 'extra' ? '🗑️ *EXTRA borrado*' : '🗑️ *Semana borrada*. EXTRA sigue')
     }
 
     // .LISTA
