@@ -1,12 +1,14 @@
-// DIAS v1.3 - TEXTO PERSONALIZADO - FOR THREE
 let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
   let chat = m.chat
   let cmd = command.toLowerCase()
   let dias = ['lunes','martes','miercoles','jueves','viernes','sabado']
 
-  // 1. CREAR DB
-  if (!global.db.data.dias) global.db.data.dias = {
-    lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: []
+  // 1. CREAR DB POR GRUPO - ESTA ES LA CLAVE
+  global.db.data.dias = global.db.data.dias || {}
+  if (!global.db.data.dias) {
+    global.db.data.dias = {
+      lunes: [], martes: [], miercoles: [], jueves: [], viernes: [], sabado: []
+    }
   }
   let db = global.db.data.dias
 
@@ -30,7 +32,7 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
     if (nuevos.length === 0) return m.reply(`> Ya estaban todos en ${dia.toUpperCase()}`)
 
     db[dia].push(...nuevos)
-    global.db.write()
+    await global.db.write()
 
     let nombres = nuevos.map(jid => '@' + jid.split('@')[0]).join(' ')
     let titulo = textoCustom? `*${textoCustom}*` : `✅ Agregado a *${dia.toUpperCase()}*`
@@ -45,24 +47,32 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
 
     let total = db[dia].length
     db[dia] = []
-    global.db.write()
+    await global.db.write()
     return m.reply(`🗑️ *${dia.toUpperCase()}* borrado. Se eliminaron ${total} personas.`)
   }
 
-  // 4. DIA -> VER CON TEXTO
+  // 4. DIA -> VER CON TEXTO + FOTO DEL GRUPO
   if (dias.includes(cmd)) {
     let dia = cmd
     if (db[dia].length === 0) return m.reply(`*${dia.toUpperCase()}*\n> Vacío`)
 
-    let texto = `📅 *${dia.toUpperCase()}* [${db[dia].length}]\n\n`
+    let nombreGrupo = await conn.getName(chat).catch(_ => 'Grupo')
+    let pp = await conn.profilePictureUrl(chat, 'image').catch(_ => null)
+
+    let texto = `📅 *${dia.toUpperCase()}* [${db[dia].length}]\n*Grupo:* ${nombreGrupo}\n\n`
     texto += db[dia].map((jid, i) => `${i+1}. @${jid.split('@')[0]}`).join('\n')
-    return conn.reply(chat, texto, m, {mentions: db[dia]})
+
+    if (pp) {
+      return conn.sendMessage(chat, { image: { url: pp }, caption: texto, mentions: db[dia] })
+    } else {
+      return conn.reply(chat, texto, m, {mentions: db[dia]})
+    }
   }
 }
 
 handler.help = [
   'setlunes Texto | @tag',
-  'setmartes Texto | @tag', 
+  'setmartes Texto | @tag',
   'setmiercoles Texto | @tag',
   'setjueves Texto | @tag',
   'setviernes Texto | @tag',
