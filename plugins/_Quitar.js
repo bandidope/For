@@ -17,7 +17,10 @@ const handler = async (m, { conn }) => {
 
   const form = new FormData()
   form.append('image_file', buffer, { filename: 'image.jpg' })
-  form.append('size', 'auto')
+  form.append('size', '4k') // HD para que no deje bordes feos
+  form.append('bg_color', 'transparent') // Forzar transparente
+  form.append('channels', 'rgba') // Canal alfa real
+  form.append('semitransparency', 'true') // Para bordes suaves
 
   const res = await fetch('https://api.remove.bg/v1.0/removebg', {
     method: 'POST',
@@ -25,17 +28,21 @@ const handler = async (m, { conn }) => {
     body: form
   })
   
-  if (!res.ok) return m.reply(`❌ Error: ${res.status}`)
+  if (!res.ok) {
+    const error = await res.text()
+    return m.reply(`❌ Error: ${error}`)
+  }
+  
   const result = Buffer.from(await res.arrayBuffer())
 
   await conn.sendMessage(m.chat, {
     document: result,
     mimetype: 'image/png',
-    fileName: 'ForThree-RemoveBG.png',
-    caption: `╭─❒「 ✨ FOR THREE REMOVE BG 」
+    fileName: 'ForThree-RemoveBG-HD.png',
+    caption: `╭─❒「 ✨ FOR THREE REMOVE BG HD」
 │
-│ ✅ Fondo eliminado
-│ 📦 Enviado como Documento para 0% compresión
+│ ✅ Fondo eliminado en 4K
+│ 📦 Sin compresión
 │ 👤 Creador: Whois Yallico
 ╰─⬣`
   }, { quoted: m })
