@@ -113,8 +113,8 @@ const handler = async (m, { conn }) => {
 }
 
 handler.help = ['removebg']
-handler.tags = ['editor']
-handler.command = /^(removebg|nobg|sremovebg)$/i
+handler.tags = ['tools']
+handler.command = /^(removebg|bg|sremovebg)$/i
 handler.limit = true
 
 export default handler
