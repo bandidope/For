@@ -1,5 +1,5 @@
 /*
-  📂 COMANDO: Remove BG Xteam
+  📂 COMANDO:.rmbg.bg.ftbg
   👤 CREADOR: Whois Yallico
   ⚡ CANAL: For Three
 */
@@ -8,29 +8,24 @@ import fetch from 'node-fetch'
 import FormData from 'form-data'
 import { downloadContentFromMessage } from '@whiskeysockets/baileys'
 
+const API_KEY = 'r1sud8kN7RvE53pRKb63tcUL'
+
 async function getImageBuffer(m, conn) {
-  const msg = m.message
-  const types = ['imageMessage', 'ephemeralMessage', 'viewOnceMessage', 'viewOnceMessageV2']
-  let imageMsg = null
-  for (const t of types) {
-    if (msg?.[t]) {
-      imageMsg = t === 'ephemeralMessage'? msg[t]?.message?.imageMessage : t.startsWith('viewOnce')? msg[t]?.message?.imageMessage : msg[t]
-      if (imageMsg) break
-    }
+  let q = m.quoted? m.quoted : m
+  if (!q.message) return null
+  
+  let type = Object.keys(q.message)[0]
+  if (type === 'viewOnceMessageV2' || type === 'viewOnceMessage') {
+    type = Object.keys(q.message[type].message)[0]
   }
-  if (!imageMsg && m.quoted) {
-    const q = m.quoted
-    const qMsg = q.message || q.msg || q
-    for (const t of types) {
-      if (qMsg?.[t]) {
-        imageMsg = t === 'ephemeralMessage'? qMsg[t]?.message?.imageMessage : t.startsWith('viewOnce')? qMsg[t]?.message?.imageMessage : qMsg[t]
-        if (imageMsg) break
-      }
-    }
-    if (!imageMsg && (q.mimetype || '').startsWith('image/')) imageMsg = q
+  if (type === 'ephemeralMessage') {
+    type = Object.keys(q.message[type].message)[0]
   }
-  if (!imageMsg) return null
-  const stream = await downloadContentFromMessage(imageMsg, 'image')
+  
+  let msg = q.message[type]
+  if (!msg.mimetype?.startsWith('image')) return null
+  
+  const stream = await downloadContentFromMessage(msg, 'image')
   const chunks = []
   for await (const chunk of stream) chunks.push(chunk)
   return Buffer.concat(chunks)
@@ -39,18 +34,25 @@ async function getImageBuffer(m, conn) {
 const handler = async (m, { conn }) => {
   await m.react('🔄')
   let imgBuffer = await getImageBuffer(m, conn)
-  if (!imgBuffer) return conn.reply(m.chat, `📸 Responde a una imagen`, m)
+  if (!imgBuffer) return conn.reply(m.chat, `📸 *Responde a una imagen con:*.rmbg`, m)
 
   try {
     const form = new FormData()
-    form.append('file', imgBuffer, { filename: 'image.jpg' })
+    form.append('image_file', imgBuffer, { filename: 'image.jpg' })
+    form.append('size', 'auto')
+    form.append('bg_color', 'transparent')
 
-    const res = await fetch('https://api.xteam.xyz/rmbg?apikey=APIKEY', {
+    const res = await fetch('https://api.remove.bg/v1.0/removebg', {
       method: 'POST',
+      headers: { 'X-Api-Key': API_KEY },
       body: form
     })
 
-    if (!res.ok) throw new Error(`API Error ${res.status}`)
+    if (!res.ok) {
+      const err = await res.text()
+      throw new Error(`API Error: ${res.status}`)
+    }
+    
     const buffer = Buffer.from(await res.arrayBuffer())
 
     await conn.sendMessage(m.chat, {
@@ -58,7 +60,8 @@ const handler = async (m, { conn }) => {
       mimetype: 'image/png',
       caption: `╭─❒「 ✨ FOR THREE REMOVE BG 」
 │
-│ ✅ Fondo eliminado
+│ ✅ Fondo eliminado con éxito
+│ 📊 Calidad: HD
 │ 👤 Creador: Whois Yallico
 ╰─⬣`
     }, { quoted: m })
@@ -67,10 +70,12 @@ const handler = async (m, { conn }) => {
 
   } catch (e) {
     await m.react('🔴')
-    conn.reply(m.chat, `❌ Error: ${e.message}`, m)
+    conn.reply(m.chat, `❌ Error: ${e.message}\n¿Te quedaste sin créditos?`, m)
   }
 }
 
+handler.help = ['rmbg']
+handler.tags = ['tools']
 handler.command = /^(rmbg|bg|ftbg)$/i
 handler.limit = true
 export default handler
