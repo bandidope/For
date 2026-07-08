@@ -29,9 +29,15 @@ const handler = async (m, { conn }) => {
   const result = Buffer.from(await res.arrayBuffer())
 
   await conn.sendMessage(m.chat, {
-    image: result,
+    document: result,
     mimetype: 'image/png',
-    caption: `╭─❒「 ✨ FOR THREE REMOVE BG 」\n│\n│ ✅ Fondo eliminado\n│ 👤 Creador: Whois Yallico\n╰─⬣`
+    fileName: 'ForThree-RemoveBG.png',
+    caption: `╭─❒「 ✨ FOR THREE REMOVE BG 」
+│
+│ ✅ Fondo eliminado
+│ 📦 Enviado como Documento para 0% compresión
+│ 👤 Creador: Whois Yallico
+╰─⬣`
   }, { quoted: m })
   
   await m.react('✅')
