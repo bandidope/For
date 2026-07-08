@@ -1,6 +1,7 @@
 /*
-  Código Basado En: MediaHub Software - Sharpify API
-  Funcionalidad: Quitar fondo de imágenes
+  📂 COMANDO: Sharpify Remove BG
+  👤 CREADOR: Whois Yallico
+  ⚡ CANAL: For Three
   API: https://sharpify-api.vercel.app/api/enhance/bgrem
 */
 
@@ -72,11 +73,13 @@ const handler = async (m, { conn }) => {
   if (!imgBuffer) {
     await m.react('🔴')
     return conn.reply(m.chat,
-`╭─❒「 ✨ SHARPIFY REMOVE BG 」
+`╭─❒「 ✨ FOR THREE REMOVE BG 」
 │
 │ 📸 Responde o envía una imagen
+│ para quitarle el fondo
 │
-│ © MediaHub Software 🌐
+│ 👤 Creador: Whois Yallico
+│ ⚡ Canal: For Three
 ╰─⬣`, m)
   }
 
@@ -89,11 +92,13 @@ const handler = async (m, { conn }) => {
       throw new Error('La API no devolvió imagen')
     }
 
-    const caption = `╭─❒「 ✨ SHARPIFY REMOVE BG 」
+    const caption = `╭─❒「 ✨ FOR THREE REMOVE BG 」
 │
-│ ✅ Fondo eliminado
+│ ✅ Fondo eliminado con éxito
+│ 🎨 API: Sharpify
 │
-│ © MediaHub Software 🌐
+│ 👤 Creador: Whois Yallico
+│ ⚡ Canal: For Three
 ╰─⬣`
 
     if (typeof imgUrl === 'string' && imgUrl.startsWith('http')) {
@@ -108,13 +113,19 @@ const handler = async (m, { conn }) => {
   } catch (e) {
     await m.react('🔴')
     console.error('[Sharpify] Error:', e.message)
-    return conn.reply(m.chat, `❌ Error: ${e.message}`, m)
+    return conn.reply(m.chat,
+`╭─❒「 ❌ ERROR 」
+│
+│ ${e.message}
+│
+│ 👤 Creador: Whois Yallico
+╰─⬣`, m)
   }
 }
 
 handler.help = ['removebg']
 handler.tags = ['tools']
-handler.command = /^(removebg|bg|sremovebg)$/i
+handler.command = /^(removebg|bg|sremovebg|ftremovebg)$/i
 handler.limit = true
 
 export default handler
