@@ -1,13 +1,13 @@
 /*
-  📂 COMANDO: Sharpify Remove BG
+  📂 COMANDO: Sharpify Remove BG PNG
   👤 CREADOR: Whois Yallico
   ⚡ CANAL: For Three
-  API: https://sharpify-api.vercel.app/api/enhance/bgrem
 */
 
 import fetch from 'node-fetch'
 import FormData from 'form-data'
 import { downloadContentFromMessage } from '@whiskeysockets/baileys'
+import sharp from 'sharp' // Para forzar PNG con transparencia
 
 const apiHeaders = {
   'User-Agent': 'okhttp/4.9.2',
@@ -17,7 +17,6 @@ const apiHeaders = {
 async function getImageBuffer(m, conn) {
   const msg = m.message
   const types = ['imageMessage', 'ephemeralMessage', 'viewOnceMessage', 'viewOnceMessageV2']
-
   let imageMsg = null
   for (const t of types) {
     if (msg?.[t]) {
@@ -25,7 +24,6 @@ async function getImageBuffer(m, conn) {
       if (imageMsg) break
     }
   }
-
   if (!imageMsg && m.quoted) {
     const q = m.quoted
     const qMsg = q.message || q.msg || q
@@ -37,7 +35,6 @@ async function getImageBuffer(m, conn) {
     }
     if (!imageMsg && (q.mimetype || '').startsWith('image/')) imageMsg = q
   }
-
   if (!imageMsg) return null
   const stream = await downloadContentFromMessage(imageMsg, 'image')
   const chunks = []
@@ -62,70 +59,47 @@ async function sharpifyRemoveBg(imgBuffer) {
 
 const handler = async (m, { conn }) => {
   await m.react('🔄')
-
-  let imgBuffer
-  try {
-    imgBuffer = await getImageBuffer(m, conn)
-  } catch (e) {
-    console.error('[Sharpify] Error descargando imagen:', e.message)
-  }
-
+  let imgBuffer = await getImageBuffer(m, conn)
   if (!imgBuffer) {
     await m.react('🔴')
-    return conn.reply(m.chat,
-`╭─❒「 ✨ FOR THREE REMOVE BG 」
-│
-│ 📸 Responde o envía una imagen
-│ para quitarle el fondo
-│
-│ 👤 Creador: Whois Yallico
-│ ⚡ Canal: For Three
-╰─⬣`, m)
+    return conn.reply(m.chat, `📸 Responde a una imagen para quitarle el fondo`, m)
   }
 
   try {
     const data = await sharpifyRemoveBg(imgBuffer)
     const imgUrl = data?.url || data?.image || data?.result || data?.output
+    if (!imgUrl) throw new Error('La API no devolvió imagen')
 
-    if (!imgUrl) {
-      console.error('[Sharpify] Respuesta API:', JSON.stringify(data))
-      throw new Error('La API no devolvió imagen')
-    }
+    // 1. Descargar imagen
+    const imgRes = await fetch(imgUrl)
+    const buffer = Buffer.from(await imgRes.arrayBuffer())
 
-    const caption = `╭─❒「 ✨ FOR THREE REMOVE BG 」
+    // 2. FORZAR A PNG CON TRANSPARENCIA usando sharp
+    const pngBuffer = await sharp(buffer).png().toBuffer()
+
+    // 3. Mandar como imagen PNG
+    await conn.sendMessage(m.chat, {
+      image: pngBuffer,
+      mimetype: 'image/png', // IMPORTANTE
+      caption: `╭─❒「 ✨ FOR THREE REMOVE BG 」
 │
-│ ✅ Fondo eliminado con éxito
-│ 🎨 API: Sharpify
-│
+│ ✅ Fondo eliminado - Formato PNG
 │ 👤 Creador: Whois Yallico
-│ ⚡ Canal: For Three
 ╰─⬣`
-
-    if (typeof imgUrl === 'string' && imgUrl.startsWith('http')) {
-      await conn.sendMessage(m.chat, { image: { url: imgUrl }, caption }, { quoted: m })
-    } else {
-      const buf = Buffer.from(imgUrl, 'base64')
-      await conn.sendMessage(m.chat, { image: buf, caption }, { quoted: m })
-    }
+    }, { quoted: m })
 
     await m.react('✅')
 
   } catch (e) {
     await m.react('🔴')
-    console.error('[Sharpify] Error:', e.message)
-    return conn.reply(m.chat,
-`╭─❒「 ❌ ERROR 」
-│
-│ ${e.message}
-│
-│ 👤 Creador: Whois Yallico
-╰─⬣`, m)
+    console.error('[Sharpify] Error:', e)
+    return conn.reply(m.chat, `❌ Error: ${e.message}`, m)
   }
 }
 
-handler.help = ['removebg']
-handler.tags = ['tools']
-handler.command = /^(removebg|bg|sremovebg|ftremovebg)$/i
+handler.help = ['removebgpng']
+handler.tags = ['tools', 'for three']
+handler.command = /^(removebgpng|rbg|ftpng)$/i
 handler.limit = true
 
 export default handler
