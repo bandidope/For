@@ -1,20 +1,14 @@
 /*
-  📂 COMANDO: Sharpify Remove BG PNG
+  📂 COMANDO: Remove BG Local PNG
   👤 CREADOR: Whois Yallico
   ⚡ CANAL: For Three
 */
 
-import fetch from 'node-fetch'
-import FormData from 'form-data'
+import { removeBackground } from 'background-removal-js'
 import { downloadContentFromMessage } from '@whiskeysockets/baileys'
-import sharp from 'sharp' // Para forzar PNG con transparencia
-
-const apiHeaders = {
-  'User-Agent': 'okhttp/4.9.2',
-  'Accept-Encoding': 'gzip'
-}
 
 async function getImageBuffer(m, conn) {
+  //... mismo código de antes para descargar imagen
   const msg = m.message
   const types = ['imageMessage', 'ephemeralMessage', 'viewOnceMessage', 'viewOnceMessageV2']
   let imageMsg = null
@@ -42,64 +36,31 @@ async function getImageBuffer(m, conn) {
   return Buffer.concat(chunks)
 }
 
-async function sharpifyRemoveBg(imgBuffer) {
-  const form = new FormData()
-  form.append('file', imgBuffer, { filename: 'source.jpg', contentType: 'image/jpeg' })
-
-  const res = await fetch('https://sharpify-api.vercel.app/api/enhance/bgrem', {
-    method: 'POST',
-    headers: {...apiHeaders,...form.getHeaders() },
-    body: form
-  })
-
-  if (!res.ok) throw new Error(`Error del servidor: ${res.status}`)
-  const data = await res.json()
-  return data
-}
-
 const handler = async (m, { conn }) => {
   await m.react('🔄')
   let imgBuffer = await getImageBuffer(m, conn)
-  if (!imgBuffer) {
-    await m.react('🔴')
-    return conn.reply(m.chat, `📸 Responde a una imagen para quitarle el fondo`, m)
-  }
+  if (!imgBuffer) return conn.reply(m.chat, `📸 Responde a una imagen`, m)
 
   try {
-    const data = await sharpifyRemoveBg(imgBuffer)
-    const imgUrl = data?.url || data?.image || data?.result || data?.output
-    if (!imgUrl) throw new Error('La API no devolvió imagen')
+    // QUITAR FONDO LOCAL
+    const resultBuffer = await removeBackground(imgBuffer)
 
-    // 1. Descargar imagen
-    const imgRes = await fetch(imgUrl)
-    const buffer = Buffer.from(await imgRes.arrayBuffer())
-
-    // 2. FORZAR A PNG CON TRANSPARENCIA usando sharp
-    const pngBuffer = await sharp(buffer).png().toBuffer()
-
-    // 3. Mandar como imagen PNG
     await conn.sendMessage(m.chat, {
-      image: pngBuffer,
-      mimetype: 'image/png', // IMPORTANTE
+      image: resultBuffer,
+      mimetype: 'image/png',
       caption: `╭─❒「 ✨ FOR THREE REMOVE BG 」
 │
-│ ✅ Fondo eliminado - Formato PNG
+│ ✅ Fondo eliminado REAL
 │ 👤 Creador: Whois Yallico
 ╰─⬣`
     }, { quoted: m })
 
     await m.react('✅')
-
   } catch (e) {
     await m.react('🔴')
-    console.error('[Sharpify] Error:', e)
-    return conn.reply(m.chat, `❌ Error: ${e.message}`, m)
+    conn.reply(m.chat, `❌ Error: ${e.message}`, m)
   }
 }
 
-handler.help = ['removebgpng']
-handler.tags = ['tools', 'for three']
-handler.command = /^(removebgpng|rbg|ftpng)$/i
-handler.limit = true
-
+handler.command = /^(rmbg|removebg|ftbg)$/i
 export default handler
